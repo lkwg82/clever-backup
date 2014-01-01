@@ -405,7 +405,7 @@ EOT
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'v|verbose'		=> \$params->{'verbose'},
 	    #~ 'z|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
-	    help		=> sub { print $help; exit },
+	    'h|help'		=> sub { print $help; exit },
 	) or confess "Try '$0 --help' for more information.\n";
 }
 

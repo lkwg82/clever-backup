@@ -8,38 +8,35 @@ use warnings;
 use Archive::Tar::Stream;
 use Carp qw/longmess cluck confess/;
 #~ use Carp::Always;
-#~ use Carp::Source::Always;
+use Carp::Source::Always;
 use Cwd;
 use Data::Dumper;
 use File::Copy;
 use File::Find;
-use FileHandle;
 use File::Slurp;
+use File::Spec::Functions qw(catfile);
 use File::Temp qw/ tempdir tempfile/;
 use Getopt::Long qw/:config bundling/;
 use IO::Scalar;
 use MIME::Base64 ();
+use POSIX qw(mkfifo);
 use Time::HiRes qw/time/;
 
 
 my $start = time;
 my $original = cwd;	# stay in original working directory
 my $params = { 
+	'compression'	=> 'none',
 	'debug' 	=> 0, 
 	'dryrun' 	=> 0, 
 	'verbose'	=> 1,
-	'compression'	=> 'none'
 };
 
 &parseOptionsAndGiveHelp($params);
 
 my $file_to_package_map = &populateFileToPackageMap;
 my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage;
-
-#~ print Dumper($filesInNoPackageList); exit;
-
 my $changed_config_files_map = &findChangedConfigFiles;
-
 my $diffs = &createDiffOfChangedConfigFiles($changed_config_files_map);
 
 &createBackupFile($filesInNoPackageList,$diffs);
@@ -56,14 +53,41 @@ sub createBackupFile{
 	
 	verbose "creating backup file";
 	
-	#~ print Dumper($diffs); 
-	#~ exit;
-	
 	my $tar = Archive::Tar::Stream->new(outfh => &getOutFileHandle());
 	
 	&addReadme(\$tar);
 	&addChangedFiles(\$tar,$diffs);
 	&addFilesInNoPackage(\$tar,$filesInNoPackageList);
+	&addAptClone(\$tar);
+	
+	$tar->FinishTar();
+	
+	sub addAptClone{
+		my $tar = shift || confess "need tar filehandle";
+			
+		
+		my $basename = "clone";
+		my $name = $basename.".apt-clone.tar.gz";
+		my $tempdir = tempdir(CLEANUP=>0,UNLINK=>0);
+		my $fullname = catfile($tempdir,$name);
+
+		verbose "$fullname";
+		
+		verbose "executing apt-clone\n";
+		my $currentWD = cwd;
+		chdir $tempdir;
+			
+		debug "changed into $tempdir";
+		&execute("apt-clone clone --with-dpkg-status --with-dpkg-repack ".$basename);
+		debug "finished apt-clone";
+		
+		chdir $currentWD;
+		
+		open my $fh,"<$fullname" || confess "could not read $fullname: $^E";
+		$$tar->AddFile($name,-s $fh, $fh);
+		close($fh);
+		debug "Done";
+	}
 	
 	sub addChangedFiles{
 		my $tar = shift || confess "need tar filehandle";
@@ -78,8 +102,9 @@ sub createBackupFile{
 								
 				debug "adding $file as $path";
 				
-				my $fh = FileHandle->new($file, "r") || confess "could not open $file";
+				open my $fh, "<$file" || confess "could not open $file";
 				$$tar->AddFile($path,-s $fh,$fh);
+				close($fh);
 				
 				&__addTextAsFile($tar,$path.".__diff__",\$metadata->{'data'});
 				
@@ -133,26 +158,24 @@ EndOfReadme
 			
 			debug "adding $_ as $path";
 			
-			my $fh = FileHandle->new($_, "r") || confess "could not open $_";
+			open my $fh, "<$_" || confess "could not open $_";
 			$$tar->AddFile($path,-s $fh,$fh);
+			close($fh);
 			
 		}@{$filesInNoPackageList};
 	}
 	
 	
 	sub getOutFileHandle{
-		
-		verbose "write to backup.tar";
-		
 		my $file;
 		if ($params->{'dryrun'} eq 1){
-			$file =">/dev/null";
+			$file ="/dev/null";
 		}
 		else{
-			$file = "> backup.tar";
+			$file = "backup.tar";
 		}
 		
-		return IO::File->new("$file") || confess "could not open $file for writing";
+		return IO::File->new(">$file") || confess "could not open $file for writing";
 	}
 }
 
@@ -391,7 +414,7 @@ sub debug{
 	
 	if ($params->{'debug'} eq 1 ){
 		chomp($line);
-		print "DEBUG $line \n";
+		print "DEBUG $line\n";
 	}
 }
 
@@ -400,7 +423,7 @@ sub verbose{
 	
 	if ($params->{'verbose'} eq 1 ){
 		chomp($line);
-		printf $line."\n";
+		print "$line\n";
 	}
 }
 

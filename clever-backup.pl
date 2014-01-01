@@ -30,7 +30,7 @@ my $params = {
 	'debug' 	=> 0, 
 	'dryrun' 	=> 0,
 	'no-apt-clone'	=> 0,
-	'outputfile'	=> '-',
+	'outputfile'	=> '',
 	'verbose'	=> 1,
 };
 
@@ -174,17 +174,45 @@ EndOfReadme
 		my $file;
 		
 		if ($params->{'dryrun'} eq 1){
-			$file ="/dev/null";
+			$file ="> /dev/null";
 		}
 		else{
-			if ($params->{'outputfile'} eq '-'){
-				$file = '/dev/stdout';
-			}else{
-				$file = $params->{'outputfile'};
+			# no file is given
+			if ($params->{'outputfile'} eq ''){
+				$file = '> backup.tar';
+				
+				my %extensions = (
+					'bzip2'	=> '.bz2',
+					'gzip'	=> '.gz',
+					'lzo'	=> '.lzo',
+					'xz'	=> '.xz',
+					
+					'none'	=> ''
+				);
+				
+				$file .= $extensions{ $params->{'compression'}};
+				
+				verbose "default output goes to $file";
+				
 			}
+			# pipe to stdout
+			elsif ($params->{'outputfile'} eq '-'){
+				$file = '> /dev/stdout';
+			}
+			# file is given
+			else{
+				$file = '> '.$params->{'outputfile'};
+			}
+			
+			if ($params->{'compression'} ne 'none'){
+				my $command = &findAppropriateCompressionCommand($params->{'compression'});
+				$file = "| $command $file";
+			}			
 		}
 		
-		return IO::File->new(">$file") || confess "could not open $file for writing";
+		debug "using file: $file";
+		
+		return IO::File->new("$file") || confess "could not open $file for writing";
 	}
 }
 
@@ -369,6 +397,7 @@ sub populateFileToPackageMap{
 	verbose "reading index of files/packages";
 	
 	my $package_to_file_map = &populatePackageToFileMap;
+	
 	my $file_to_package_map = {};
 	
 	while (my ($package, $filesArray) = each %{$package_to_file_map}) {
@@ -403,26 +432,58 @@ sub populateFileToPackageMap{
 sub parseOptionsAndGiveHelp{
 	
 	my $help = <<EOT;	
+	-b --bzip2	use bzip2 for compression (output will be .tar.bz2)
 	-d --debug	to be verbose and print some debug infos
 	-f --file	file to be written to, if file is - then STDOUT will be used
-	-j --bzip2	(not implmented yet) use bzip2 for compression (output will be .tar.bz2)
-	-h --help	show this help
+	-g --gzip	use gzip for compression (output will be .tar.gz)
+	-h --help	show this help 
+	-l --lzo	use lzop for compression (output will be .tar.lzo)
 	-n --dryrun	just make a dryrun, write nothing
 	--no-apt-clone	skipping apt-clone, no information about installed packages will be saved
 	-v --verbose	be verbose
-	-z --gzip	(not implmented yet) use gzip for compression (output will be .tar.gz)
+	-z --xz		use xz for compression (output will be .tar.xz)
 EOT
 
 	GetOptions (
+	    'b|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
 	    'd|debug'		=> \$params->{'debug'},
 	    'f|file=s'		=> \$params->{'outputfile'},
-	    'j|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
+	    'g|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
 	    'h|help'		=> sub { print $help; exit },
+	    'l|lzo'		=> sub { $params->{'compression'} = 'lzo'; },
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
 	    'v|verbose'		=> \$params->{'verbose'},
-	    'z|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
+	    'z|xz'		=> sub { $params->{'compression'} = 'xz'; },
 	) or confess "Try '$0 --help' for more information.\n";
+	
+	$params->{'verbose'}=1 if ($params->{'debug'});
+	
+	&findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
+}
+
+# maybe we can use parallel compression
+sub findAppropriateCompressionCommand{
+		
+	my %method2commandMap =(
+		'bzip2' => ['pbzip2','bzip2'],
+		'gzip'	=> ['pigz', 'gzip'],
+		'lzo'	=> ['lzop'],
+		'xz'	=> ['xzz']
+	);
+	my $method = shift || confess "need a compression command";
+	confess "unknown command $method " if ( !exists($method2commandMap{$method}));
+	
+	debug "trying to find command for $method";
+	
+	grep{
+		my $cmd = $_;
+		my $return = &execute('which '.$cmd);
+		debug " checked and found $cmd as compression command";
+		return $cmd if ($return->{'exit-code'} == 0);
+	} @{$method2commandMap{ $method }};
+	
+	confess "could not find any compression commands for '".$method."'";
 }
 
 sub debug{

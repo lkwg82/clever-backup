@@ -28,7 +28,8 @@ my $original = cwd;	# stay in original working directory
 my $params = { 
 	'compression'	=> 'none',
 	'debug' 	=> 0, 
-	'dryrun' 	=> 0, 
+	'dryrun' 	=> 0,
+	'no-apt-clone'	=> 0,
 	'verbose'	=> 1,
 };
 
@@ -58,7 +59,9 @@ sub createBackupFile{
 	&addReadme(\$tar);
 	&addChangedFiles(\$tar,$diffs);
 	&addFilesInNoPackage(\$tar,$filesInNoPackageList);
-	&addAptClone(\$tar);
+	
+	verbose "skipping apt-clone" 	if ( $params->{'no-apt-clone'});
+	&addAptClone(\$tar) 		if (!$params->{'no-apt-clone'});
 	
 	$tar->FinishTar();
 	
@@ -71,7 +74,7 @@ sub createBackupFile{
 		my $tempdir = tempdir(CLEANUP=>0,UNLINK=>0);
 		my $fullname = catfile($tempdir,$name);
 
-		verbose "$fullname";
+		verbose "doing apt-clone";
 		
 		verbose "executing apt-clone\n";
 		my $currentWD = cwd;
@@ -395,6 +398,7 @@ sub parseOptionsAndGiveHelp{
 	-j --bzip2	(not implmented yet) use bzip2 for compression (output will be .tar.bz2)
 	-h --help	show this help
 	-n --dryrun	just make a dryrun, write nothing
+	--no-apt-clone	skipping apt-clone, no information about installed packages will be saved
 	-v --verbose	be verbose
 	-z --gzip	(not implmented yet) use gzip for compression (output will be .tar.gz)
 EOT
@@ -402,10 +406,11 @@ EOT
 	GetOptions (
 	    'd|debug'		=> \$params->{'debug'},
 	    #~ 'j|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
+	    'h|help'		=> sub { print $help; exit },
 	    'n|dryrun'		=> \$params->{'dryrun'},
+	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
 	    'v|verbose'		=> \$params->{'verbose'},
 	    #~ 'z|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
-	    'h|help'		=> sub { print $help; exit },
 	) or confess "Try '$0 --help' for more information.\n";
 }
 

@@ -30,6 +30,7 @@ my $params = {
 	'debug' 	=> 0, 
 	'dryrun' 	=> 0,
 	'no-apt-clone'	=> 0,
+	'outputfile'	=> '-',
 	'verbose'	=> 1,
 };
 
@@ -171,11 +172,16 @@ EndOfReadme
 	
 	sub getOutFileHandle{
 		my $file;
+		
 		if ($params->{'dryrun'} eq 1){
 			$file ="/dev/null";
 		}
 		else{
-			$file = "backup.tar";
+			if ($params->{'outputfile'} eq '-'){
+				$file = '/dev/stdout';
+			}else{
+				$file = $params->{'outputfile'};
+			}
 		}
 		
 		return IO::File->new(">$file") || confess "could not open $file for writing";
@@ -395,6 +401,7 @@ sub parseOptionsAndGiveHelp{
 	
 	my $help = <<EOT;	
 	-d --debug	to be verbose and print some debug infos
+	-f --file	file to be written to, if file is - then STDOUT will be used
 	-j --bzip2	(not implmented yet) use bzip2 for compression (output will be .tar.bz2)
 	-h --help	show this help
 	-n --dryrun	just make a dryrun, write nothing
@@ -405,12 +412,13 @@ EOT
 
 	GetOptions (
 	    'd|debug'		=> \$params->{'debug'},
-	    #~ 'j|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
+	    'f|file=s'		=> \$params->{'outputfile'},
+	    'j|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
 	    'h|help'		=> sub { print $help; exit },
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
 	    'v|verbose'		=> \$params->{'verbose'},
-	    #~ 'z|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
+	    'z|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
 	) or confess "Try '$0 --help' for more information.\n";
 }
 
@@ -419,7 +427,7 @@ sub debug{
 	
 	if ($params->{'debug'} eq 1 ){
 		chomp($line);
-		print "DEBUG $line\n";
+		print STDERR "DEBUG $line\n";
 	}
 }
 
@@ -428,7 +436,7 @@ sub verbose{
 	
 	if ($params->{'verbose'} eq 1 ){
 		chomp($line);
-		print "$line\n";
+		print STDERR "$line\n";
 	}
 }
 

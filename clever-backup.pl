@@ -224,10 +224,11 @@ sub createDiffOfChangedConfigFiles{
 			if (-T ){ # if text-file
 				debug " in $tempdir";
 				
-				my $diff = &execute("diff -u $original $changed");
+				my $return = &execute("diff -u $original $changed");
+				my $diff = $return->{'output'};
 				
-				if ( defined($$diff) ){
-					$diff{$changed} = {'type' => 'text', 'data' => $$diff, 'comment' => 'unified diff'};
+				if ( defined($diff) ){
+					$diff{$changed} = {'type' => 'text', 'data' => $diff, 'comment' => 'unified diff'};
 				}
 			}else{
 				my ($fh,$tempfile) = tempfile( CLEANUP => 1, UNLINK => 1 );
@@ -260,13 +261,15 @@ sub createDiffOfChangedConfigFiles{
 			my $cacheDir = "/var/cache/apt/archives/";
 			chdir $cacheDir;
 			
-			my $output = &execute("apt-get download --print-uris $$package");
-			$$output =~ m/^'([^']+)' ([^\ ]+) (\d+) ((.+):([a-f0-9]+))$/o;
+			my $return = &execute("apt-get download --print-uris $$package");
+			my $output = $return->{'output'};
+			$output =~ m/^'([^']+)' ([^\ ]+) (\d+) ((.+):([a-f0-9]+))$/o;
 			my ($url,$file,$size,$hashType,$hashsum) = ($1,$2,$3,$5,$6);
 			
 			if (-f $file){
-				my $output = &execute($hashType."sum $file");
-				$$output =~ m/^([a-f0-9]+)/o;
+				my $return = &execute($hashType."sum $file");
+				my $output = $return->{'output'};
+				$output =~ m/^([a-f0-9]+)/o;
 				
 				if ( $1 eq $hashsum){
 					debug "checksum matched";
@@ -452,9 +455,10 @@ sub execute{
 		}
 	close(P);
 	
+	debug "exit code $?";
 	debug "output:$output";
 	
-	return \$output;
+	return {'output' => $output, 'exit-code' => $?};
 }
 
 END {

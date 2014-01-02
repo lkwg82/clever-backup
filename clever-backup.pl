@@ -2,13 +2,12 @@
 
 $|=1;
 use strict;
-use subs qw/debug verbose/;
+use subs qw/confess debug verbose/;
 use warnings;
 
 use Archive::Tar::Stream;
 use Carp qw/longmess cluck confess/;
-#~ use Carp::Always;
-#~ use Carp::Source::Always;
+use Carp::Source::Always;
 use Cwd;
 use Data::Dumper;
 use File::Copy;
@@ -23,6 +22,13 @@ use IPC::Open3;
 use POSIX qw/mkfifo :sys_wait_h/;
 use Time::HiRes qw/time/;
 
+no warnings 'redefine';	# for confess
+
+my $original = cwd;
+sub confess{ 
+	chdir $original; 
+	Carp::confess @_; 
+};
 
 my $start = time;
 my $params = { 
@@ -40,7 +46,7 @@ my $params = {
 	'dryrun' 		=> 0,
 	'print-options'		=> 0,
 	'quiet'			=> 0,
-	'verbose'		=> 1,
+	'verbose'		=> 0,
 };
 
 &parseOptionsAndGiveHelp($params);
@@ -181,7 +187,7 @@ EndOfReadme
 		debug "   length ".length($$text);
 		debug "   text:$$text";
 		
-		my $fh = new IO::Scalar $text || confess "could not open $_";
+		my $fh = new IO::Scalar $text || confess "could not open $$text";
 		$$tar->AddFile($logicalFileName,length($$text),$fh);
 	}
 	
@@ -438,18 +444,17 @@ sub findChangedFiles{
 		&execute($command,$config);
 		
 		sub handleOutput{
-			local $_ = shift || confess "missing \$_";
+			my $file 		= shift || confess "missing \$file";
 			my $listOfDirs 		= shift || confess "need list of dirs";
 			my $excludes 		= shift || confess "need list of excludes";
 			my $changedFiles 	= shift || confess "need changed files";
 		
-			if ( /^debsums: missing file (\/[^ ]+)/){
+			if ( $file =~ /^debsums: missing file (\/[^ ]+)/){
 				my $match = $1;
 				if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$match)){
 					push @{$changedFiles->{'missing'}}, $match;
 				}			
 			}else{
-				my $file = $_;
 				chomp($file);
 				
 				if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$file)){

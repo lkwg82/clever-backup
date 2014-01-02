@@ -29,6 +29,8 @@ my $params = {
 	'sourceDirectories' 	=> ['/etc'],
 	'print-options'		=> 0,
 	'compression'		=> 'gzip',
+	'compressionCommand'	=> undef,
+	'compressionLevel'	=> 5,
 	'debug' 		=> 0, 
 	'dryrun' 		=> 0,
 	'no-apt-clone'		=> 0,
@@ -206,44 +208,11 @@ EndOfReadme
 	
 	
 	sub getOutFileHandle{
-		my $file;
-		
-		if ($params->{'dryrun'} eq 1){
-			$file ="> /dev/null";
-		}
-		else{
-			# no file is given
-			if ($params->{'outputfile'} eq ''){
-				$file = '> backup.tar';
-				
-				my %extensions = (
-					'bzip2'	=> '.bz2',
-					'gzip'	=> '.gz',
-					'lzo'	=> '.lzo',
-					'xz'	=> '.xz',
+		my $file = '> '.$params->{'outputfile'};
 					
-					'none'	=> ''
-				);
-				
-				$file .= $extensions{ $params->{'compression'}};
-				
-				verbose "default output goes to $file";
-				
-			}
-			# pipe to stdout
-			elsif ($params->{'outputfile'} eq '-'){
-				$file = '> /dev/stdout';
-			}
-			# file is given
-			else{
-				$file = '> '.$params->{'outputfile'};
-			}
-			
-			if ($params->{'compression'} ne 'none'){
-				my $command = &findAppropriateCompressionCommand($params->{'compression'});
-				$file = "| $command $file";
-			}			
-		}
+		if ( defined($params->{'compressionCommand'}) ){
+			$file = "| ".$params->{'compressionCommand'}." -".$params->{'compressionLevel'}." $file";
+		}			
 		
 		debug "using file: $file";
 		
@@ -482,6 +451,7 @@ sub parseOptionsAndGiveHelp{
 	-g --gzip		use gzip for compression (output will be .tar.gz)
 	-h --help		show this help 
 	-l --lzo		use lzop for compression (output will be .tar.lzo)
+	--level			compression level to use (0..9)
 	-n --dryrun		just make a dryrun, write nothing
 	--no-apt-clone		skipping apt-clone, no information about installed packages will be saved
 	-p --print-options	prints configuration (helps to see defaults)
@@ -490,6 +460,11 @@ sub parseOptionsAndGiveHelp{
 	-v --verbose		be verbose
 	-z --xz			use xz for compression (output will be .tar.xz)
 EOT
+
+	sub bye{
+		print 'ERROR '.join(' ',@_),"\n";
+		exit 1;
+	}
 
 	my @sourceDirectories = ();
 	my $exitAfterOptions = 0;
@@ -502,19 +477,48 @@ EOT
 	    'g|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
 	    'h|help'		=> sub { print $help; exit },
 	    'l|lzo'		=> sub { $params->{'compression'} = 'lzo'; },
+	    'level=i'		=> \$params->{'compressionLevel'},
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
 	    'p|print-options'	=> \$params->{'print-options'},
 	    's|source=s'	=> \@sourceDirectories,
 	    'v|verbose'		=> \$params->{'verbose'},
 	    'z|xz'		=> sub { $params->{'compression'} = 'xz'; },
-	) or confess "Try '$0 --help' for more information.\n";
+	) or bye "Try '$0 --help' for more information.\n";
+	
+	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/);
 	
 	$params->{'sourceDirectories'} = \@sourceDirectories if (scalar(@sourceDirectories)>0);
 	
 	$params->{'verbose'}=1 		if ($params->{'debug'});
 	$params->{'print-options'}=1 	if ($params->{'debug'});
 	
+	if ($params->{'dryrun'}){
+		$params->{'outputfile'} ="/dev/null";
+	}else{
+		if ($params->{'outputfile'} eq ''){
+			$params->{'outputfile'} = 'backup.tar';
+			
+			my %extensions = (
+				'bzip2'	=> '.bz2',
+				'gzip'	=> '.gz',
+				'lzo'	=> '.lzo',
+				'xz'	=> '.xz',
+				
+				'none'	=> ''
+			);
+			
+			$params->{'outputfile'} .= $extensions{ $params->{'compression'}};
+			
+			verbose "default output goes to ".$params->{'outputfile'};
+			
+		}
+		elsif ($params->{'outputfile'} eq '-'){
+			$params->{'outputfile'} = '/dev/stdout';
+		}
+	}
+	
+	$params->{'compressionCommand'} = &findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
 	
 	if ($params->{'print-options'}){
 		local $Data::Dumper::Sortkeys=1;
@@ -523,7 +527,6 @@ EOT
 	
 	exit if $exitAfterOptions;
 	
-	&findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
 }
 
 # maybe we can use parallel compression

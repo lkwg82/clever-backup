@@ -26,12 +26,14 @@ use Time::HiRes qw/time/;
 my $start = time;
 my $original = cwd;	# stay in original working directory
 my $params = { 
-	'compression'	=> 'gzip',
-	'debug' 	=> 0, 
-	'dryrun' 	=> 0,
-	'no-apt-clone'	=> 0,
-	'outputfile'	=> '',
-	'verbose'	=> 1,
+	'backupDirectories' 	=> ['/etc'],
+	'print-options'		=> 0,
+	'compression'		=> 'gzip',
+	'debug' 		=> 0, 
+	'dryrun' 		=> 0,
+	'no-apt-clone'		=> 0,
+	'outputfile'		=> '',
+	'verbose'		=> 1,
 };
 
 &parseOptionsAndGiveHelp($params);
@@ -473,16 +475,17 @@ sub populateFileToPackageMap{
 sub parseOptionsAndGiveHelp{
 	
 	my $help = <<EOT;	
-	-b --bzip2	use bzip2 for compression (output will be .tar.bz2)
-	-d --debug	to be verbose and print some debug infos
-	-f --file	file to be written to, if file is - then STDOUT will be used
-	-g --gzip	use gzip for compression (output will be .tar.gz)
-	-h --help	show this help 
-	-l --lzo	use lzop for compression (output will be .tar.lzo)
-	-n --dryrun	just make a dryrun, write nothing
-	--no-apt-clone	skipping apt-clone, no information about installed packages will be saved
-	-v --verbose	be verbose
-	-z --xz		use xz for compression (output will be .tar.xz)
+	-b --bzip2		use bzip2 for compression (output will be .tar.bz2)
+	-d --debug		to be verbose and print some debug infos
+	-f --file		file to be written to, if file is - then STDOUT will be used
+	-g --gzip		use gzip for compression (output will be .tar.gz)
+	-h --help		show this help 
+	-l --lzo		use lzop for compression (output will be .tar.lzo)
+	-n --dryrun		just make a dryrun, write nothing
+	--no-apt-clone		skipping apt-clone, no information about installed packages will be saved
+	-p --print-options	prints configuration (helps to see defaults)
+	-v --verbose		be verbose
+	-z --xz			use xz for compression (output will be .tar.xz)
 EOT
 
 	GetOptions (
@@ -494,11 +497,18 @@ EOT
 	    'l|lzo'		=> sub { $params->{'compression'} = 'lzo'; },
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
+	    'p|print-options'	=> \$params->{'print-options'},
 	    'v|verbose'		=> \$params->{'verbose'},
 	    'z|xz'		=> sub { $params->{'compression'} = 'xz'; },
 	) or confess "Try '$0 --help' for more information.\n";
 	
-	$params->{'verbose'}=1 if ($params->{'debug'});
+	$params->{'verbose'}=1 		if ($params->{'debug'});
+	$params->{'print-options'}=1 	if ($params->{'debug'});
+	
+	if ($params->{'print-options'}){
+		local $Data::Dumper::Sortkeys=1;
+		print Dumper($params);
+	}
 	
 	&findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
 }

@@ -26,7 +26,7 @@ use Time::HiRes qw/time/;
 my $start = time;
 my $original = cwd;	# stay in original working directory
 my $params = { 
-	'backupDirectories' 	=> ['/etc'],
+	'sourceDirectories' 	=> ['/etc'],
 	'print-options'		=> 0,
 	'compression'		=> 'gzip',
 	'debug' 		=> 0, 
@@ -476,6 +476,7 @@ sub parseOptionsAndGiveHelp{
 	
 	my $help = <<EOT;	
 	-b --bzip2		use bzip2 for compression (output will be .tar.bz2)
+	-c --print-o-a-e	prints options and exits
 	-d --debug		to be verbose and print some debug infos
 	-f --file		file to be written to, if file is - then STDOUT will be used
 	-g --gzip		use gzip for compression (output will be .tar.gz)
@@ -484,12 +485,18 @@ sub parseOptionsAndGiveHelp{
 	-n --dryrun		just make a dryrun, write nothing
 	--no-apt-clone		skipping apt-clone, no information about installed packages will be saved
 	-p --print-options	prints configuration (helps to see defaults)
+	-s --source		use these as source directories (for multiple sources use multiple times )
+				e.g. -s a -s b -s c
 	-v --verbose		be verbose
 	-z --xz			use xz for compression (output will be .tar.xz)
 EOT
 
+	my @sourceDirectories = ();
+	my $exitAfterOptions = 0;
+	
 	GetOptions (
 	    'b|bzip2'		=> sub { $params->{'compression'} = 'bzip2'; },
+	    'c|print-o-a-e'	=> sub { $params->{'print-options'} = 1; $exitAfterOptions = 1;},
 	    'd|debug'		=> \$params->{'debug'},
 	    'f|file=s'		=> \$params->{'outputfile'},
 	    'g|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
@@ -498,17 +505,23 @@ EOT
 	    'n|dryrun'		=> \$params->{'dryrun'},
 	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
 	    'p|print-options'	=> \$params->{'print-options'},
+	    's|source=s'	=> \@sourceDirectories,
 	    'v|verbose'		=> \$params->{'verbose'},
 	    'z|xz'		=> sub { $params->{'compression'} = 'xz'; },
 	) or confess "Try '$0 --help' for more information.\n";
 	
+	$params->{'sourceDirectories'} = \@sourceDirectories if (scalar(@sourceDirectories)>0);
+	
 	$params->{'verbose'}=1 		if ($params->{'debug'});
 	$params->{'print-options'}=1 	if ($params->{'debug'});
+	
 	
 	if ($params->{'print-options'}){
 		local $Data::Dumper::Sortkeys=1;
 		print Dumper($params);
 	}
+	
+	exit if $exitAfterOptions;
 	
 	&findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
 }

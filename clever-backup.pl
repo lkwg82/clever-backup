@@ -26,7 +26,7 @@ use Time::HiRes qw/time/;
 
 my $start = time;
 my $params = { 
-	'sourceDirectories' 	=> ['/etc'],
+	'sourceDirectories' 	=> ['/etc','/var'],
 	'excludes'		=> ['/var/cache','/var/lib/dpkg'],
 	'fail-on-missing-package-source' => 0,
 	'no-apt-clone'		=> 1,
@@ -34,7 +34,7 @@ my $params = {
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
-	'compressionLevel'	=> 5,
+	'compressionLevel'	=> 6,
 	
 	'debug' 		=> 0, 
 	'dryrun' 		=> 0,
@@ -47,7 +47,7 @@ my $params = {
 
 my $file_to_package_map = &populateFileToPackageMap($params->{'sourceDirectories'},$params->{'excludes'});
 my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage($params->{'sourceDirectories'},$params->{'excludes'});
-my $changed_files_map = &findChangedFiles($params->{'sourceDirectories'},$params->{'excludes'});
+my $changed_files_map = &findChangedFiles($params->{'sourceDirectories'},$params->{'excludes'}, $file_to_package_map);
 my $diffs = &createDiffOfFiles($changed_files_map->{'changed'},$file_to_package_map);
 
 &createBackupFile($filesInNoPackageList,$diffs,$changed_files_map->{'missing'});
@@ -256,34 +256,34 @@ sub createDiffOfFiles{
 		if (defined($tempdir)){
 			my $currentWD = cwd;
 			chdir $tempdir;
-		
-		grep{ 
-			debug "diffing $_\n";
 			
-			my $changed = $_;
-			(my $original = $_) =~s/^\///o;
+			grep{ 
+				debug "diffing $_\n";
 				
-			if (-T ){ # if text-file
-				debug " in $tempdir";
-				
-				my $return = &execute("diff -u $original $changed");
-				my $diff = $return->{'output'};
-				
-				if ( defined($diff) ){
-					$diff{$changed} = {'type' => 'text', 'data' => $diff, 'comment' => 'unified diff'};
+				my $changed = $_;
+				(my $original = $_) =~s/^\///o;
+					
+				if (-T ){ # if text-file
+					debug " in $tempdir";
+					
+					my $return = &execute("diff -u $original $changed");
+					my $diff = $return->{'output'};
+					
+					if ( defined($diff) ){
+						$diff{$changed} = {'type' => 'text', 'data' => $diff, 'comment' => 'unified diff'};
+					}
+				}else{
+					my ($fh,$tempfile) = tempfile( CLEANUP => 1, UNLINK => 1 );
+					
+					&execute("bsdiff $original $changed $tempfile");
+					
+					my $binaryDiff = read_file( $tempfile, { binmode => ':raw' } ) ;
+					
+					my $encoded = MIME::Base64::encode($binaryDiff);
+					$diff{$changed} = {'type' => 'binary', 'data' => $encoded, 'comment' => 'base64 encoded bsdiff' };
 				}
-			}else{
-				my ($fh,$tempfile) = tempfile( CLEANUP => 1, UNLINK => 1 );
-				
-				&execute("bsdiff $original $changed $tempfile");
-				
-				my $binaryDiff = read_file( $tempfile, { binmode => ':raw' } ) ;
-				
-				my $encoded = MIME::Base64::encode($binaryDiff);
-				$diff{$changed} = {'type' => 'binary', 'data' => $encoded, 'comment' => 'base64 encoded bsdiff' };
-			}
-		}@{$files};
-		
+			}@{$files};
+			
 			chdir $currentWD;
 		}
 		
@@ -297,7 +297,7 @@ sub createDiffOfFiles{
 		verbose "downloading & extracting '$package'";
 		
 		my $file = &checkIfPackageAlreadyDownloaded(\$package,\$tempdir);
-		
+				
 		if ( defined $file ){
 			my $currentWD = cwd;
 			chdir $tempdir;
@@ -322,37 +322,37 @@ sub createDiffOfFiles{
 			if ($return->{'output'} =~ m/^'([^']+)' ([^\ ]+) (\d+) ((.+):([a-f0-9]+))$/o ){
 				my ($url,$file,$size,$hashType,$hashsum) = ($1,$2,$3,$5,$6);
 				
-			my $cacheDir = "/var/cache/apt/archives/";
+				my $cacheDir = "/var/cache/apt/archives/";
 				my $currentWD = cwd;
-			chdir $cacheDir;
-			
-			if (-f $file){
-				my $return = &execute($hashType."sum $file");
-				my $output = $return->{'output'};
-				$output =~ m/^([a-f0-9]+)/o;
+				chdir $cacheDir;
 				
-				if ( $1 eq $hashsum){
-					debug "checksum matched";
+				if (-f $file){
+					my $return = &execute($hashType."sum $file");
+					my $output = $return->{'output'};
+					$output =~ m/^([a-f0-9]+)/o;
+					
+					if ( $1 eq $hashsum){
+						debug "checksum matched";
+					}else{
+						debug "redownloading $$package (checksum failed)";
+						&execute("apt-get download $$package")
+					}
 				}else{
-					debug "redownloading $$package (checksum failed)";
+					debug "downloading $$package (missed file)";
 					&execute("apt-get download $$package")
 				}
-			}else{
-				debug "downloading $$package (missed file)";
-				&execute("apt-get download $$package")
-			}
-			
-			debug "copy file to tempdir ($$tempdir)";
-			copy($file,$$tempdir);
-			
+				
+				debug "copy file to tempdir ($$tempdir)";
+				copy($file,$$tempdir);
+				
 				chdir $currentWD;
 			
-			return $file;
-		}
-		
+				return $file;
+			}
+						
 			my $message = "could not find any sources for package $$package";
 			die "ERROR $message" 	if ( $params->{'fail-on-missing-package-source'});
-		
+			
 			return undef;			
 		}
 	}
@@ -380,48 +380,86 @@ sub createDiffOfFiles{
 }
 
 sub findChangedFiles{
-	my $listOfDirs 	= shift || confess "need list of dirs";
-	my $excludes 	= shift || confess "need list of excludes";
+	my $listOfDirs 		= shift || confess "need list of dirs";
+	my $excludes 		= shift || confess "need list of excludes";
+	my $file_to_package_map = shift || confess "need file to package map";
+	
 	verbose "find changed files";
 	
-	my %changedFiles = (
+	my %packages = map{ $$_ => 1} (values %{$file_to_package_map});
+	
+	my @packages = @{&filterOutNotInstalledPackages(\%packages)};
+	
+	my $changedFiles = {
 		'changed' => [],
 		'missing' => []
-	);
+	};
 	
-	my $pid = open3(*IN,*OUT,*ERR,"debsums -ec") || confess $^E;
-	close(IN);
+	my $max = scalar(@packages);
+	#~ verbose "$max";
+	my $step = 50;
+	while($max > 0){
+		$step = $max if ($max < $step);
+		my @temporaryList = splice @packages, 0, $step;
+		$changedFiles = &checkHashSums($listOfDirs,$excludes,$changedFiles,join(' ',@temporaryList));
+		
+		$max -= $step ;
+	}
 	
-	my $childPid = fork();
-	#~ verbose "pid $$";
-	if ($childPid==0){
-		while(<ERR>){
-			warn "WARN ".$_ if (!$params->{'quiet'});
+	return $changedFiles;
+	
+	sub filterOutNotInstalledPackages{
+		my $packages = shift || confess "need hash ref";
+		
+		my $command = 'dpkg-query -l | grep ^ii | awk {\'print $2\'} | xargs';
+		my $return = &execute($command);
+		my @installedPackages = split(/\ +/,$return->{'output'});
+		my %installedPackages = map { $_ => 1 } @installedPackages;
+				
+		my @verifiedInstalledPackages =();
+		grep{
+			push @verifiedInstalledPackages, $_ if ( exists $installedPackages{$_});
+		}(keys %{$packages});
+		
+		return \@verifiedInstalledPackages;
+	}
+	
+	sub checkHashSums{	
+		my $listOfDirs 		= shift || confess "need list of dirs";
+		my $excludes 		= shift || confess "need list of excludes";
+		my $changedFiles 	= shift || confess "need changed files";
+		my $packages 		= shift || confess "need package string";
+		
+		my $command = "debsums -ec ".$packages;
+		my $config = {
+			'outSub' 	=> \&handleOutput,
+			'outArgs'	=> [$listOfDirs,$excludes,$changedFiles]
+		};
+		&execute($command,$config);
+		
+		sub handleOutput{
+			local $_ = shift || confess "missing \$_";
+			my $listOfDirs 		= shift || confess "need list of dirs";
+			my $excludes 		= shift || confess "need list of excludes";
+			my $changedFiles 	= shift || confess "need changed files";
+		
+			if ( /^debsums: missing file (\/[^ ]+)/){
+				my $match = $1;
+				if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$match)){
+					push @{$changedFiles->{'missing'}}, $match;
+				}			
+			}else{
+				my $file = $_;
+				chomp($file);
+				
+				if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$file)){
+					push @{$changedFiles->{'changed'}}, $file;
+				}
+			}
 		}
-		close(ERR);
-		exit;
+		
+		return $changedFiles;
 	}
-	close(ERR);
-	
-	while(<OUT>){
-		if ( /^debsums: missing file (\/[^ ]+)/){
-			my $match = $1;
-			if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$match)){
-				push @{$changedFiles{'missing'}}, $match;
-			}			
-		}else{
-			my $file = $_;
-			chomp($file);
-			
-			if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$file)){
-			push @{$changedFiles{'changed'}}, $file;
-		}
-	}
-	}
-	close(OUT);
-	
-	return \%changedFiles;
-	
 	sub shouldBeInSourceAndNotExcluded{
 		my $listOfDirs 	= shift || confess "need list of dirs";
 		my $excludes 	= shift || confess "need list of excludes";
@@ -432,7 +470,7 @@ sub findChangedFiles{
 		grep{
 			if ( !$isOk && $item =~ m{^$_} ){
 				$isOk = 1;
-}
+			}
 		}@{$listOfDirs};
 		
 		grep{	
@@ -449,14 +487,14 @@ sub findFilesToBeBackedUpBecauseInNoPackage{
 	my $excludes 	= shift || confess "need list of excludes";
 	
 	my $files_in_no_package = {};
-	
+		
 	# could not make the wanted sub an inner _named_ sub
 	# because the variable '$files_in_no_package' will not stay shared
 	# see  http://perldoc.perl.org/perldiag.html => Variable "%s" will not stay shared
 	
 	find({ wanted => sub {
 		my $item = $_;
-				
+
 		# because of '/' in excludes we need another expression for m//
 		grep{	return if ($item =~ m{^$_} );	}@{$excludes};
 		
@@ -512,13 +550,13 @@ sub populateFileToPackageMap{
 				if ($file =~ m{^$_}){
 					# because of '/' in excludes we need another expression for m//
 					grep{	next if ($file =~ m{^$_} );	}@{$excludes};
-			
-			if (!exists($package_to_file_map{$package})){
-				$package_to_file_map{$package} = [];
-			}
-			
-			push @{$package_to_file_map{$package}}, $file;
-		}
+					
+					if (!exists($package_to_file_map{$package})){
+						$package_to_file_map{$package} = [];
+					}
+					
+					push @{$package_to_file_map{$package}}, $file;
+				}
 			}@{$listOfDirs}
 		}
 		close(DLOCATEDB);
@@ -537,7 +575,6 @@ sub parseOptionsAndGiveHelp{
 				sometimes packages were installed manually and changed files could
 				not be effectivily diffed (in case diff is complete file)
 	--no-apt-clone		skipping apt-clone, no information about installed packages will be saved
-	-p --print-options	prints configuration (helps to see defaults)
 	-s, --source		use these as source directories (for multiple sources use multiple times )
 				e.g. -s a -s b -s c
 	-x, --exclude		exclude sources to backed up (same notation as --source)
@@ -576,29 +613,23 @@ EOT
 	    's|source=s'			=> \@sourceDirectories,
 	    'x|exclude=s'			=> \@excludes,
 	    
-	    'c|print-o-a-e'	=> sub { $params->{'print-options'} = 1; $exitAfterOptions = 1;},
-	    'd|debug'		=> \$params->{'debug'},
+	    'c|print-o-a-e'			=> sub { $params->{'print-options'} = 1; $exitAfterOptions = 1;},
+	    'd|debug'				=> \$params->{'debug'},
 	    'n|dryrun'				=> \$params->{'dryrun'},
 	    'p|print-options'			=> \$params->{'print-options'},
 	    'q|quiet'				=> \$params->{'quiet'},
 	    'v|verbose'				=> \$params->{'verbose'},
 	    
 	    'b|bzip2'				=> sub { $params->{'compression'} = 'bzip2'; },
-	    'g|gzip'		=> sub { $params->{'compression'} = 'gzip'; },
-	    'h|help'		=> sub { print $help; exit },
-	    'l|lzo'		=> sub { $params->{'compression'} = 'lzo'; },
-	    'level=i'		=> \$params->{'compressionLevel'},
-	    'n|dryrun'		=> \$params->{'dryrun'},
-	    'no-apt-clone'	=> \$params->{'no-apt-clone'},
-	    'p|print-options'	=> \$params->{'print-options'},
-	    's|source=s'	=> \@sourceDirectories,
-	    'v|verbose'		=> \$params->{'verbose'},
-	    'z|xz'		=> sub { $params->{'compression'} = 'xz'; },
+	    'g|gzip'				=> sub { $params->{'compression'} = 'gzip'; },
+	    'l|lzo'				=> sub { $params->{'compression'} = 'lzo'; },
+	    'level=i'				=> \$params->{'compressionLevel'},
+	    'z|xz'				=> sub { $params->{'compression'} = 'xz'; },
 	) or bye "Try '$0 --help' for more information.\n";
 	
 	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/);
 	
-	$params->{'sourceDirectories'} = \@sourceDirectories if (scalar(@sourceDirectories)>0);
+	$params->{'sourceDirectories'} = \@sourceDirectories 	if (scalar(@sourceDirectories)>0);
 	$params->{'excludes'} = \@excludes 			if (scalar(@excludes)>0);
 	
 	grep{
@@ -609,7 +640,7 @@ EOT
 	
 	$params->{'verbose'}=1 		if ($params->{'debug'});
 	$params->{'print-options'}=1 	if ($params->{'debug'});
-	
+
 	$params->{'debug'}=0 		if ($params->{'quiet'});
 	$params->{'print-options'}=0 	if ($params->{'quiet'});
 	$params->{'verbose'}=0 		if ($params->{'quiet'});
@@ -647,30 +678,30 @@ EOT
 		exit if $exitAfterOptions;
 	}
 	
-
-# maybe we can use parallel compression
-sub findAppropriateCompressionCommand{
+	
+	# maybe we can use parallel compression
+	sub findAppropriateCompressionCommand{
+			
+		my %method2commandMap =(
+			'bzip2' => ['pbzip2','bzip2'],
+			'gzip'	=> ['pigz', 'gzip'],
+			'lzo'	=> ['lzop'],
+			'xz'	=> ['xzz']
+		);
+		my $method = shift || confess "need a compression command";
+		confess "unknown command $method " if ( !exists($method2commandMap{$method}));
 		
-	my %method2commandMap =(
-		'bzip2' => ['pbzip2','bzip2'],
-		'gzip'	=> ['pigz', 'gzip'],
-		'lzo'	=> ['lzop'],
-		'xz'	=> ['xzz']
-	);
-	my $method = shift || confess "need a compression command";
-	confess "unknown command $method " if ( !exists($method2commandMap{$method}));
-	
-	debug "trying to find command for $method";
-	
-	grep{
-		my $cmd = $_;
-			my $return = &execute('which '.$cmd,1);
-		debug " checked and found $cmd as compression command";
-		return $cmd if ($return->{'exit-code'} == 0);
-	} @{$method2commandMap{ $method }};
-	
-	confess "could not find any compression commands for '".$method."'";
-}
+		debug "trying to find command for $method";
+		
+		grep{
+			my $cmd = $_;
+			my $return = &execute('which '.$cmd,{'quiet' => 1});
+			debug " checked and found $cmd as compression command";
+			return $cmd if ($return->{'exit-code'} == 0);
+		} @{$method2commandMap{ $method }};
+		
+		confess "could not find any compression commands for '".$method."'";
+	}
 }
 
 
@@ -693,8 +724,48 @@ sub verbose{
 }
 
 sub execute{
-	my $command = shift || confess 'need command to be executed';
-	my $quiet = shift || $params->{'quiet'};
+	my $command 	= shift || confess 'need command to be executed';
+	my $config 	= shift || {};
+		
+	my $output = "";
+	my $_config = { 
+		'quiet' => $params->{'quiet'},
+		'_sub'	=> sub{
+			my $handle 		= shift || confess "missing handle";
+			my $innerSub 		= shift || confess "missing inner sub";
+			my $innerSubArguments	= shift || [];
+			
+			while(<$handle>){
+				$innerSub->( \$_,@{$innerSubArguments});
+			}
+			close($handle);
+		},
+		'errSub' => sub{
+			my $line = shift || confess "missing \$line";
+			my $config = shift || confess "missing config";
+			
+			warn "WARN ".$$line if (!$config->{'quiet'});
+		},
+		'errArgs' => [],
+		'outSub' => sub{
+			my $line = shift || confess "missing \$line";
+			my $output = shift || confess "missing output";
+
+			debug $_;
+			$$output .= $$line;
+		},
+		'outArgs' => [\$output],
+	};
+	
+	$_config->{'errArgs'} = [$_config];
+	
+	grep{	
+		my $key = $_;
+		# merge missing configs into passed one
+		if (!exists($config->{$key})){
+			$config->{$key} = $_config->{$key};
+		}
+	}(keys %{$_config});
 	
 	debug 'executing '.$command;
 	
@@ -704,20 +775,11 @@ sub execute{
 	my $childPid = fork();
 	
 	if ($childPid==0){
-		while(<ERR>){
-			warn "WARN ".$_ if (!$quiet);
-		}
-		close(ERR);
+		$config->{'_sub'}->(\*ERR,$config->{'errSub'},$config->{'errArgs'});
 		exit;
 	}
 	
-	my $output = "";
-	while(<OUT>){
-			debug $_;
-			$output .= $_;
-		}
-	close(OUT);
-	close(ERR);
+	$config->{'_sub'}->(\*OUT,$config->{'outSub'},$config->{'outArgs'});
 	
 	#~ waitpid($pid,WNOHANG);
 	

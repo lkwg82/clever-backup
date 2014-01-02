@@ -152,21 +152,27 @@ EndOfReadme
 	
 	sub addFilesInNoPackage{
 		my $tar = shift || confess "need tar filehandle";
-		my $filesInNoPackageList = shift || confess "need array ref for file list";
+		my $filesInNoPackageList = shift || confess "need hash ref for file list";
 		
 		verbose "adding no-package files to archive";
 		
 		my $dirForFilesFromNoPackage = 'no_package';
-		grep{
-			my $path = $dirForFilesFromNoPackage."".$_;
+		
+		while (my($file, $linkDestination) = each %{$filesInNoPackageList}) {
+			my $path = $dirForFilesFromNoPackage."".$file;
 			
-			debug "adding $_ as $path";
+			debug "adding $file as $path";
 			
-			open my $fh, "<$_" || confess "could not open $_";
-			$$tar->AddFile($path,-s $fh,$fh);
-			close($fh);
+			if ( length($linkDestination) == 0){
+				open my $fh, "<$file" || confess "could not open $file";
+				$$tar->AddFile($path,-s $fh,$fh);
+				close($fh);
+			}
+			else{
+				$$tar->AddLink($path,$linkDestination,('typeflag'=>2));
+			}
 			
-		}@{$filesInNoPackageList};
+		}
 	}
 	
 	
@@ -369,7 +375,8 @@ sub findChangedConfigFiles{
 }
 
 sub findFilesToBeBackedUpBecauseInNoPackage{
-	my $files_in_no_package = [];
+	my $files_in_no_package = {};
+	# TODO need to be adjusted
 	my @listOfDirs = ("/etc");
 	
 	# could not make the wanted sub an inner _named_ sub
@@ -377,18 +384,24 @@ sub findFilesToBeBackedUpBecauseInNoPackage{
 	# see  http://perldoc.perl.org/perldiag.html => Variable "%s" will not stay shared
 	
 	find({ wanted => sub {
-	
-		if ( -f ){
-			my $package = $file_to_package_map->{$_};
-			if ( !defined($package) ){
-				#~ print $_,"\n";
-				push @{$files_in_no_package}, $_;
+		my $item = $_;
+				
+		my $package = $file_to_package_map->{$item};
+		if ( !defined($package) ){
+			if (-d $item){
+				# do nothing
+			}elsif(-l $item){
+				debug "link ".readlink($item);
+				$files_in_no_package->{$item} = readlink $item;
+			}			
+			elsif (-f $item){
+				debug "file $item";
+				$files_in_no_package->{$item} = '';
 			}
 		}
 	}
 	, follow => 0, no_chdir=>1 }, @listOfDirs);
 
-	
 	return $files_in_no_package;
 }
 

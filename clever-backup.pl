@@ -26,7 +26,7 @@ use Time::HiRes qw/time/;
 my $start = time;
 my $original = cwd;	# stay in original working directory
 my $params = { 
-	'compression'	=> 'none',
+	'compression'	=> 'gzip',
 	'debug' 	=> 0, 
 	'dryrun' 	=> 0,
 	'no-apt-clone'	=> 0,
@@ -41,7 +41,7 @@ my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage;
 my $changed_config_files_map = &findChangedConfigFiles;
 my $diffs = &createDiffOfChangedConfigFiles($changed_config_files_map);
 
-&createBackupFile($filesInNoPackageList,$diffs);
+&createBackupFile($filesInNoPackageList,$diffs,$changed_config_files_map->{'missing'});
 
 verbose 'duration '. ( time - $start ) . "ms\n";
 <STDIN>;
@@ -49,7 +49,11 @@ verbose 'duration '. ( time - $start ) . "ms\n";
 # ---- subs -----
 
 sub createBackupFile{
-	my ($filesInNoPackageList,$diffs) = @_;
+	confess "need 3 params " if (scalar(@_) != 3);
+	
+	my $filesInNoPackageList 	= shift || confess "need files in no package";
+	my $diffs 			= shift || confess "need diffs";
+	my $missingFiles 		= shift || confess "need missing files";
 	
 	chdir $original;
 	
@@ -59,6 +63,7 @@ sub createBackupFile{
 	
 	&addReadme(\$tar);
 	&addChangedFiles(\$tar,$diffs);
+	&addMissingFiles(\$tar,$missingFiles);
 	&addFilesInNoPackage(\$tar,$filesInNoPackageList);
 	
 	verbose "skipping apt-clone" 	if ( $params->{'no-apt-clone'});
@@ -100,6 +105,8 @@ sub createBackupFile{
 		verbose "adding diffs to archive";
 		
 		my $dirForChangedFiles = 'changed';
+		$$tar->AddLink($dirForChangedFiles,$dirForChangedFiles,('typeflag'=>5));
+		
 		grep{
 			while (my ($file, $metadata) = each %{$_}) {
 				my $path = $dirForChangedFiles."".$file;
@@ -121,6 +128,23 @@ sub createBackupFile{
 		}@{$diffs};
 	}
 	
+	sub addMissingFiles{
+		my $tar 		= shift || confess "need tar filehandle";
+		my $missingFiles 	= shift || confess "need diffs";
+		
+		verbose "adding missing files to archive";
+		
+		
+		my $dirForMissingFiles = 'missing';
+		$$tar->AddLink($dirForMissingFiles,$dirForMissingFiles,('typeflag'=>5));
+		
+		grep{
+			my $path = $dirForMissingFiles."".$_;
+			debug "adding $_ as $path";
+			$$tar->AddLink($path,$_);
+		}@{$missingFiles };
+	}
+	
 	sub addReadme{
 		my $tar = shift || confess "need tar filehandle";
 		
@@ -130,6 +154,8 @@ some information on these entries:
 --------------------------------------------
 
 - no_package		files, which are not originally from any package installed on the system
+- changed		files, which are changed (contains : full version, diff and info parts )
+- missing		files, which are missing 
 
 EndOfReadme
 		&__addTextAsFile($tar,"README",\$text);
@@ -157,6 +183,7 @@ EndOfReadme
 		verbose "adding no-package files to archive";
 		
 		my $dirForFilesFromNoPackage = 'no_package';
+		$$tar->AddLink($dirForFilesFromNoPackage,$dirForFilesFromNoPackage,('typeflag'=>5));
 		
 		while (my($file, $linkDestination) = each %{$filesInNoPackageList}) {
 			my $path = $dirForFilesFromNoPackage."".$file;
@@ -390,10 +417,11 @@ sub findFilesToBeBackedUpBecauseInNoPackage{
 		if ( !defined($package) ){
 			if (-d $item){
 				# do nothing
-			}elsif(-l $item){
+			}
+			elsif(-l $item){
 				debug "link ".readlink($item);
 				$files_in_no_package->{$item} = readlink $item;
-			}			
+			}
 			elsif (-f $item){
 				debug "file $item";
 				$files_in_no_package->{$item} = '';

@@ -1,0 +1,13 @@
+clever-backup-0.0.1 (1-1ubuntu1) UNRELEASED; urgency=low
+
+  * fixed interpreter
+  * fixed help
+  * fixed root settings
+
+ -- lars <lars@lars-G33-DS3R>  Fri, 03 Jan 2014 19:53:41 +0100
+
+clever-backup-0.0.1 (1-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- lars <lars@lars-G33-DS3R>  Fri, 03 Jan 2014 19:08:31 +0100

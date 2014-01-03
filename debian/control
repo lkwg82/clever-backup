@@ -1,0 +1,16 @@
+Source: clever-backup-0.0.1
+Section: misc
+Priority: extra
+Maintainer: Lars K.W. Gohlke <lkwg82@gmx.de>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://github.com/lkwg82/clever-backup
+Vcs-Git: https://github.com/lkwg82/clever-backup.git
+
+Package: clever-backup-0.0.1
+Architecture: all
+Depends: perl, libfile-slurp-perl, libio-stringy-perl, dlocate, debsums
+Description: A backup skript which only takes files
+ which are not in a package or changed from the 
+ package original. Additionally it packs packages
+ which are installed manually into this backup.

@@ -1,4 +1,4 @@
-#!perl
+#!/usr/bin/perl
 
 package Main;
 
@@ -46,7 +46,7 @@ my $params = {
 	],
 	'fail-on-missing-package-source' => 0,
 	'no-pkg-clone'		=> 0,
-	'outputfile'		=> '',
+	'outputfile'		=> undef,
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
@@ -449,7 +449,7 @@ EOT
 	}
 	
 	if ( $< != 0 ) {
-		bye "$0 needs to run as root";
+		bye "$0 needs to run as root\n\n$help";
 	}
 
 	my @sourceDirectories = ();
@@ -479,6 +479,7 @@ EOT
 	    'z|xz'				=> sub { $params->{'compression'} = 'xz'; },
 	) or bye "Try '$0 --help' for more information.\n";
 	
+	bye "please set at least output file with --file xyz\n\n$help" if (!defined($params->{'outputfile'}));	
 	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/o);
 	
 	$params->{'sourceDirectories'} = \@sourceDirectories 	if (scalar(@sourceDirectories)>0);

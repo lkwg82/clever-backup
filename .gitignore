@@ -1,3 +1,2 @@
-.pc
-xpc
-patches
+debian/clever-backup-*
+debian/files

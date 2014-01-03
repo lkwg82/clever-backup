@@ -1,14 +1,9 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: clever-backup-0.0.1
-Source: <url://example.com>
+Source: https://github.com/lkwg82/clever-backup.git
 
 Files: *
-Copyright: <years> <put author's name and email here>
-           <years> <likewise for another author>
-License: GPL-2.0+
-
-Files: debian/*
-Copyright: 2014 lars <lars@lars-G33-DS3R>
+Copyright: 2013-2014 Lars K.W. Gohlke, lkwg82@gmx.de
 License: GPL-2.0+
 
 License: GPL-2.0+
@@ -27,8 +22,3 @@ License: GPL-2.0+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
-# Please avoid to pick license terms that are more restrictive than the
-# packaged work, as it may make Debian's contributions unacceptable upstream.

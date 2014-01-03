@@ -28,8 +28,15 @@ sub confess{
 
 my $start = time;
 my $params = { 
-	'sourceDirectories' 	=> ['/etc','/usr','/var'],
-	'excludes'		=> ['/var/cache','/var/lib/dpkg'],
+	'sourceDirectories' 	=> ['/etc','/usr','/var/log','/var/spool'],
+	'excludes'		=> [
+		'/var/cache',
+		#~ '/var/lib/dpkg',
+		#~ '/var/lib/dkms',
+		#~ '/var/lib/dlocate',
+		#~ #'/var/lib/gems',
+		#~ '/var/lib/mlocate',
+	],
 	'fail-on-missing-package-source' => 0,
 	'no-pkg-clone'		=> 1,
 	'outputfile'		=> '',

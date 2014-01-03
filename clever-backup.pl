@@ -406,7 +406,16 @@ sub populateFileToPackageMap{
 
 sub parseOptionsAndGiveHelp{
 	
-	my $help = <<EOT;	
+	my $help = <<EOT;
+Backups your system a bit more intelligent (claims to do ;) )
+
+The content of the source directories is checked against files from packages.
+Only changed or non-package files are saved. Additionally the package list is
+saved along the configuration of the package management system and its reposi-
+tories.
+
+Needs to be ROOT!
+
 	-h, --help		show this help 
 	
 	-f, --file		file to be written to, if file is - then STDOUT will be used
@@ -437,6 +446,10 @@ EOT
 	sub bye{
 		print STDERR 'ERROR '.join(' ',@_),"\n";
 		exit 1;
+	}
+	
+	if ( $< != 0 ) {
+		bye "$0 needs to run as root";
 	}
 
 	my @sourceDirectories = ();

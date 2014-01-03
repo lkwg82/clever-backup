@@ -11,6 +11,7 @@ use Carp qw/longmess cluck/;
 use Carp::Source;
 use Cwd;
 use Data::Dumper;
+use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Slurp;
@@ -28,9 +29,15 @@ sub confess{
 
 my $start = time;
 my $params = { 
-	'sourceDirectories' 	=> ['/etc','/usr','/var/log','/var/spool'],
+	'sourceDirectories' 	=> [
+		'/etc',
+		'/usr',
+		'/var/log',
+		'/var/spool',
+		],
 	'excludes'		=> [
 		'/var/cache',
+		#~ '/usr/lib','/usr/share','/usr/local',
 		#~ '/var/lib/dpkg',
 		#~ '/var/lib/dkms',
 		#~ '/var/lib/dlocate',
@@ -38,7 +45,7 @@ my $params = {
 		#~ '/var/lib/mlocate',
 	],
 	'fail-on-missing-package-source' => 0,
-	'no-pkg-clone'		=> 1,
+	'no-pkg-clone'		=> 0,
 	'outputfile'		=> '',
 	
 	'compression'		=> 'gzip',
@@ -57,14 +64,14 @@ my $params = {
 my $packageSystem = Debian->new($params);
 
 my $file_to_package_map = &populateFileToPackageMap($params->{'sourceDirectories'},$params->{'excludes'},$packageSystem);
-my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage($params->{'sourceDirectories'},$params->{'excludes'});
+my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage($params->{'sourceDirectories'},$params->{'excludes'},$file_to_package_map);
 my $changed_files_map = &findChangedFiles($params->{'sourceDirectories'},$params->{'excludes'}, $file_to_package_map,$packageSystem);
 my $diffs = &createDiffOfFiles($changed_files_map->{'changed'},$file_to_package_map,$packageSystem);
 
 &createBackupFile($filesInNoPackageList,$diffs,$changed_files_map->{'missing'}, $packageSystem);
 
 &verbose('duration '. ( time - $start ) . "ms\n");
-<STDIN>;
+#~ <STDIN>;
 
 # ---- subs -----
 
@@ -79,8 +86,6 @@ sub createBackupFile{
 	my $diffs 			= shift || confess "need diffs";
 	my $missingFiles 		= shift || confess "need missing files";
 	my $packageSystem 		= shift || confess "need missing packageSystem";
-	
-	#~ chdir $original;
 	
 	&verbose("creating backup file");
 	
@@ -183,10 +188,21 @@ EndOfReadme
 		my $dirForFilesFromNoPackage = 'no_package';
 		$$tar->AddLink($dirForFilesFromNoPackage,$dirForFilesFromNoPackage,('typeflag'=>5));
 		
+		my $counter = 0;
+		my %directoryEntries = ();
 		while (my($file, $linkDestination) = each %{$filesInNoPackageList}) {
 			my $path = $dirForFilesFromNoPackage."".$file;
 			
-			&debug("adding $file as $path");
+			debug("adding $file ($linkDestination) as $path");
+			
+			# create directory entries for entries
+			# else the first entry in a directory makes the parent directory
+			# entries looking like links too
+			my $dir = dirname($path);
+			if (!exists $directoryEntries{$dir}){
+				$$tar->AddLink($dir,$dir,('typeflag'=>5));
+				$directoryEntries{$dir} = \1;
+			}
 			
 			if ( length($linkDestination) == 0){
 				open my $fh, "<$file" || confess "could not open $file";
@@ -196,8 +212,7 @@ EndOfReadme
 			else{
 				# symbolic link needs special flag
 				$$tar->AddLink($path,$linkDestination,('typeflag'=>2));
-			}
-			
+			}	
 		}
 	}
 	
@@ -283,8 +298,8 @@ sub createDiffOfFiles{
 	}
 
 	sub findPackagesFromChangedFiles{
-		my @changedFiles = @{$_[0]};
-		my $file_to_package_map = $_[1];
+		my $changedFiles 	= shift || confess "missing list of changed files";
+		my $file_to_package_map = shift || confess "missing file to package map";
 		
 		my %packages;
 		
@@ -298,7 +313,7 @@ sub createDiffOfFiles{
 			}
 			
 			push @{$packages{$package}}, $file;
-		}@changedFiles;
+		}@{$changedFiles};
 		
 		return \%packages;
 	}
@@ -338,8 +353,9 @@ sub findChangedFiles{
 }
 
 sub findFilesToBeBackedUpBecauseInNoPackage{
-	my $listOfDirs 	= shift || confess "need list of dirs";
-	my $excludes 	= shift || confess "need list of excludes";
+	my $listOfDirs 		= shift || confess "need list of dirs";
+	my $excludes 		= shift || confess "need list of excludes";
+	my $file_to_package_map = shift || confess "need file to package map";
 	
 	my $files_in_no_package = {};
 		
@@ -350,16 +366,11 @@ sub findFilesToBeBackedUpBecauseInNoPackage{
 	find({ wanted => sub {
 		my $item = $_;
 
-		# because of '/' in excludes we need another expression for m//
-		grep{	return if ($item =~ m{^$_} );	}@{$excludes};
+		return if (&isExcludedPath($excludes,\$item));
 		
 		my $package = $file_to_package_map->{$item};
 		if ( !defined($package) ){
-			if (-d $item){
-				# do nothing
-			}
-			elsif(-l $item){
-				&debug("link ".readlink($item));
+			if(-l $item){
 				$files_in_no_package->{$item} = readlink $item;
 			}
 			elsif (-f $item){
@@ -455,7 +466,7 @@ EOT
 	    'z|xz'				=> sub { $params->{'compression'} = 'xz'; },
 	) or bye "Try '$0 --help' for more information.\n";
 	
-	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/);
+	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/o);
 	
 	$params->{'sourceDirectories'} = \@sourceDirectories 	if (scalar(@sourceDirectories)>0);
 	$params->{'excludes'} = \@excludes 			if (scalar(@excludes)>0);
@@ -464,7 +475,7 @@ EOT
 		bye "missing source $_\n\n$help" unless (-e)
 	}@{$params->{'sourceDirectories'}};
 	
-	bye "quiet and verbose/&debug(are mutually exclusive \n\n$help" if ($params->{'quiet'} && ($params->{'debug'} || $params->{'verbose'}));
+	bye "quiet and verbose/debug(are mutually exclusive \n\n$help" if ($params->{'quiet'} && ($params->{'debug'} || $params->{'verbose'}));
 	
 	$params->{'verbose'}=1 		if ($params->{'debug'});
 	$params->{'print-options'}=1 	if ($params->{'debug'});
@@ -530,6 +541,37 @@ EOT
 		
 		confess "could not find any compression commands for '".$method."'";
 	}
+}
+
+sub isAcceptedPath{
+	my $listOfDirs 		= shift || confess "need list of dirs";
+	my $excludes 		= shift || confess "need list of excludes";
+	my $file		= shift || confess "need file";
+	
+	grep{
+		if ($$file =~ m{^$_}){
+			
+			return 0 if (&isExcludedPath($excludes,$file));
+			
+			# not accept directories
+			return 0 if (-d $$file);
+			
+			# accepted
+			return 1;
+		}
+	}@{$listOfDirs};
+	
+	return 0; # no match
+}
+
+sub isExcludedPath{
+	my $excludes 		= shift || confess "need list of excludes";
+	my $file		= shift || confess "need file";
+	
+	# because of '/' in excludes we need another expression for m//
+	grep{	return 1 if ($$file =~ m{^$_} )	}@{$excludes};
+	
+	return 0;
 }
 
 # ----------------------------------------------------------------------------------
@@ -646,6 +688,7 @@ use Carp qw/longmess cluck confess/;
 use Carp::Source::Always;
 use Cwd;
 use Data::Dumper;
+use File::Basename;
 use File::Copy;
 use File::Spec::Functions qw/catfile/;
 use File::Temp qw/tempdir/;
@@ -713,41 +756,21 @@ sub checkPackageHashSums{
 		my $excludes 		= shift || confess "need list of excludes";
 		my $changedFiles 	= shift || confess "need changed files";
 	
-		if ( $$file =~ /^debsums: missing file (\/[^ ]+)/){
-			my $match = $1;
-			if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$match)){
-				push @{$changedFiles->{'missing'}}, $match;
-			}			
-		}else{
+		if ($$file =~ /^\// ){
 			chomp($$file);
 			
-			if (&shouldBeInSourceAndNotExcluded($listOfDirs,$excludes,$file)){
+			if (Main::isAcceptedPath($listOfDirs,$excludes,$file)){
 				push @{$changedFiles->{'changed'}}, $$file;
 			}
 		}
+		elsif ( $$file =~ /^debsums: missing file (\/[^ ]+)/o){
+			my $match = $1;
+			if (Main::isAcceptedPath($listOfDirs,$excludes,\$match)){
+				push @{$changedFiles->{'missing'}}, $match;
+			}			
+		}
 		
 		return $changedFiles;
-		
-		sub shouldBeInSourceAndNotExcluded{
-			my $listOfDirs 	= shift || confess "need list of dirs";
-			my $excludes 	= shift || confess "need list of excludes";
-			my $item	= shift || confess "need item to check against";
-			
-			my $isOk = 0;
-			
-			grep{
-				if ( !$isOk && $$item =~ m{^$_} ){
-					$isOk = 1;
-				}
-			}@{$listOfDirs};
-			
-			grep{	
-				# because of '/' in excludes we need another expression for m//
-				return 0 if ($$item =~ m{^$_} );	
-			}@{$excludes};
-			
-			return $isOk;
-		}
 	}
 	
 	return $changedFiles;
@@ -855,6 +878,8 @@ sub populatePackageToFileMap{
 	
 	confess "need no empty package map" if ( scalar(keys %{$package_to_file_map}) == 0 );
 	
+	#~ print Dumper($package_to_file_map);exit;
+	
 	return $package_to_file_map;
 	
 	sub retrieveFromDlocateDB{
@@ -864,33 +889,19 @@ sub populatePackageToFileMap{
 		
 		open(DLOCATEDB,"</var/lib/dlocate/dlocatedb") || confess "$^E";
 		while(<DLOCATEDB>){
-			my ($package,$file) = $_ =~ /([^:]+): (.+)/;
+			my $line = $_;
+			my ($package, $file) = $line =~ m/^([^:]+).+?(\/.+)$/o;
 			
-			&filter($listOfDirs,$excludes,$package_to_file_map,\$package,\$file);
+			if ( Main::isAcceptedPath($listOfDirs,$excludes,\$file) ){
+				if (!exists($package_to_file_map->{$package})){
+					$package_to_file_map->{$package} = [];
+				}
+				
+				push @{$package_to_file_map->{$package}}, $file;	
+			}
 		}
 		close(DLOCATEDB);
 		
 		return $package_to_file_map;
-	}
-	
-	sub filter{
-		my $listOfDirs 		= shift || confess "need list of dirs";
-		my $excludes 		= shift || confess "need list of excludes";
-		my $package_to_file_map	= shift || confess "need packages";
-		my $package		= shift || confess "need package";
-		my $file		= shift || confess "need file";
-		
-		grep{
-			if ($$file =~ m{^$_}){
-				# because of '/' in excludes we need another expression for m//
-				grep{	next if ($file =~ m{^$_} );	}@{$excludes};
-				
-				if (!exists($package_to_file_map->{$$package})){
-					$package_to_file_map->{$$package} = [];
-				}
-				
-				push @{$package_to_file_map->{$$package}}, $$file;
-			}
-		}@{$listOfDirs}
 	}
 }

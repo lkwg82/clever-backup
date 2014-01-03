@@ -9,8 +9,9 @@ Vcs-Git: https://github.com/lkwg82/clever-backup.git
 
 Package: clever-backup-0.0.1
 Architecture: all
-Depends: perl, libfile-slurp-perl, libio-stringy-perl, dlocate, debsums
-Description: A backup skript which only takes files
+Depends: ${misc:Depends}, perl, libfile-slurp-perl, libio-stringy-perl, dlocate, debsums
+Description: Intelligent backup depending on package management
+ A backup programm which only takes files
  which are not in a package or changed from the 
  package original. Additionally it packs packages
  which are installed manually into this backup.

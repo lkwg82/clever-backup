@@ -1,3 +1,10 @@
+clever-backup-0.0.1 (1-2ubuntu2) quantal; urgency=low
+
+  * removed Carp::Source as module (has problems with a depending module
+    Test::Differences)
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 00:54:21 +0100
+
 clever-backup-0.0.1 (1-2ubuntu1) quantal; urgency=low
 
   * fixed missing orig.tar.gz with 'debuild -S -sa -i\.git'

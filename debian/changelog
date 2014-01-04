@@ -1,3 +1,9 @@
+clever-backup-0.0.1 (1-2ubuntu1) quantal; urgency=low
+
+  * fixed missing orig.tar.gz with 'debuild -S -sa -i\.git'
+
+ -- lars <lars@lars-G33-DS3R>  Sun, 05 Jan 2014 00:01:33 +0100
+
 clever-backup-0.0.1 (1-2) quantal; urgency=low
 
   [ Lars K.W. Gohlke ]

@@ -35,19 +35,19 @@ dpkg -c libarch*perl*deb | grep perllocal.pod > /dev/null &&
 
 # steps to publish to ppa
 
-add changelog
+add changelog from git commits and commit this changelog 
 ```
-dch
+git-dch --release --git-author --commit --id-length=5
 ```
 
 build source package
 ```
-debuild -S -sa -i\.git
+git-buildpackage -S --git-tag --git-sign-tags
 ```
 
 upload (read https://help.launchpad.net/Packaging/PPA/Uploading)
 ```
-dput ppa:lkwg82/clever-backup ../clever-backup-0.0.1_1-2ubuntu1_source.changes
+dput ppa:lkwg82/clever-backup ../clever-backup-1_1-2ubuntu1_source.changes
 ```
 
 # howto create ppa perl debian package

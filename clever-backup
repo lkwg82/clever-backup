@@ -443,9 +443,10 @@ debugging
 
 compression
 	-b, --bzip2		use bzip2 for compression (output will be .tar.bz2)
-	-g, --gzip		use gzip for compression (output will be .tar.gz)
+	-g, --gzip		use gzip for compression (output will be .tar.gz) (DEFAULT)
 	-l, --lzo		use lzop for compression (output will be .tar.lzo)
 	--level=#		compression level to use (0..9)
+	    --no-compression	dont use any compression
 	-z, --xz		use xz for compression (output will be .tar.xz)
 EOT
 
@@ -486,6 +487,7 @@ EOT
 	    'g|gzip'				=> sub { $params->{'compression'} = 'gzip'; },
 	    'l|lzo'				=> sub { $params->{'compression'} = 'lzo'; },
 	    'level=i'				=> \$params->{'compressionLevel'},
+	    'no-compression'			=> sub { $params->{'compression'} = 'none'; },
 	    'z|xz'				=> sub { $params->{'compression'} = 'xz'; },
 	) or bye "Try '$0 --help' for more information.\n";
 	
@@ -553,7 +555,7 @@ EOT
 			'bzip2' => ['pbzip2','bzip2'],
 			'gzip'	=> ['pigz', 'gzip'],
 			'lzo'	=> ['lzop'],
-			'xz'	=> ['xzz']
+			'xz'	=> ['xz']
 		);
 		my $method = shift || confess "need a compression command";
 		confess "unknown command $method " if ( !exists($method2commandMap{$method}));

@@ -48,7 +48,7 @@ my $params = {
 	],
 	'fail-on-missing-package-source' => 0,
 	'no-pkg-clone'		=> 0,
-	'outputfile'		=> undef,
+	'outputfile'		=> '',
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
@@ -420,6 +420,8 @@ Needs to be ROOT!
 
 	-h, --help		show this help 
 	
+	    --action		start backup
+	
 	-f, --file		file to be written to, if file is - then STDOUT will be used
 	    --fail-on-missing-package-source	
 				sometimes packages were installed manually and changed files could
@@ -454,12 +456,15 @@ EOT
 		bye "$0 needs to run as root\n\n$help";
 	}
 
-	my @sourceDirectories = ();
+	my $action = 0;
 	my @excludes = ();
 	my $exitAfterOptions = 0;
+	my @sourceDirectories = ();
 	
 	GetOptions (
 	    'h|help'				=> sub { print $help; exit },
+	    
+	    'action'				=> \$action,
 	    
 	    'f|file=s'				=> \$params->{'outputfile'},
 	    'fail-on-missing-package-source=s'	=> \$params->{'fail-on-missing-package-source'},
@@ -481,7 +486,7 @@ EOT
 	    'z|xz'				=> sub { $params->{'compression'} = 'xz'; },
 	) or bye "Try '$0 --help' for more information.\n";
 	
-	bye "please set at least output file with --file xyz\n\n$help" if (!defined($params->{'outputfile'}));	
+	bye "please use --action to start backup \n\n$help" if (!$action);	
 	bye "valid compression levels only 0-9 not ".$params->{'compressionLevel'}."\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/o);
 	
 	$params->{'sourceDirectories'} = \@sourceDirectories 	if (scalar(@sourceDirectories)>0);
@@ -620,7 +625,7 @@ sub execute{
 	my $config 	= shift || {};
 		
 	my $output = "";
-	my $_config = { 
+	my $defaultConfig = { 
 		'quiet' => $params->{'quiet'},
 		'_sub'	=> sub{
 			my $handle 		= shift || confess "missing handle";
@@ -634,9 +639,9 @@ sub execute{
 		},
 		'errSub' => sub{
 			my $line = shift || confess "missing \$line";
-			my $config = shift || confess "missing config";
+			my $quiet = shift || confess "missing flag quiet";
 			
-			print STDERR "WARN ".$$line if (!$config->{'quiet'});
+			print STDERR "WARN ".$$line if (!$quiet);
 		},
 		'errArgs' => [],
 		'outSub' => sub{
@@ -649,19 +654,25 @@ sub execute{
 		'outArgs' => [\$output],
 	};
 	
-	$_config->{'errArgs'} = [$_config];
+	$defaultConfig->{'errArgs'} = [$defaultConfig->{'quiet'}];
 	
-	grep{	
-		my $key = $_;
-		# merge missing configs into passed one
-		if (!exists($config->{$key})){
-			$config->{$key} = $_config->{$key};
-		}
-	}(keys %{$_config});
+	&mergeDefaultConfigAndPassedConfig($defaultConfig,$config);
+	
+	sub mergeDefaultConfigAndPassedConfig{
+		my $defaultConfig = shift || confess "missing default configuration";
+		my $passedConfig = shift || confess "missing passed configuration";
+		
+		grep{	
+			my $key = $_;
+			if (!exists($passedConfig->{$key})){
+				$passedConfig->{$key} = $defaultConfig->{$key};
+			}
+		}(keys %{$defaultConfig});
+	}
 	
 	&debug('executing '.$command);
 	
-	my $pid = open3(*IN,*OUT,*ERR,$command) || confess $^E;
+	my $pid = open3(*IN,*OUT,*ERR,$command) || confess "error executing '$command': $^E";
 	close(IN);
 	
 	my $childPid = fork();
@@ -671,12 +682,16 @@ sub execute{
 		exit;
 	}
 	
+	# execute configured routines for handling STDOUT and STDERR
 	$config->{'_sub'}->(\*OUT,$config->{'outSub'},$config->{'outArgs'});
 	
-	&debug("exit code for \"$command\" code $?");
+	waitpid( $pid, 0 ) or die "$!\n";
+	my $exitCode = $?;
+	
+	&debug("exit code for \"$command\" code $exitCode");
 	&debug("output:$output");
 	
-	return {'output' => $output, 'exit-code' => $?};
+	return {'output' => $output, 'exit-code' => $exitCode};
 }
 
 sub verbose{

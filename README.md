@@ -1,7 +1,7 @@
 clever-backup
 =============
 
-makes a intelligent system backup
+makes an intelligent system backup
 
 
 # debian package

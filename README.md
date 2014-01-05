@@ -44,7 +44,7 @@ git-dch --release --git-author --commit --id-length=5
 
 build source package
 ```
-git-buildpackage -S --git-tag --git-sign-tags --git-no-create-orig
+git-buildpackage -S -sa --git-tag --git-sign-tags --git-no-create-orig
 ```
 
 upload (read https://help.launchpad.net/Packaging/PPA/Uploading)

@@ -1,9 +1,9 @@
-clever-backup (0.1-2ubuntu10) quantal; urgency=low
+clever-backup (0.1-2ubuntu11) quantal; urgency=low
 
   * [854de] added linkt to ppa
   * [38e4b] fixed error code handling (determining correct compression command)
 
- -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 12:55:51 +0100
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 13:04:46 +0100
 
 clever-backup (0.1-2ubuntu8) quantal; urgency=low
 

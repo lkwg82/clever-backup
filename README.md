@@ -6,6 +6,8 @@ makes a intelligent system backup
 
 # debian package
 
+PPA **https://launchpad.net/~lkwg82/+archive/clever-backup**
+
 create package without any gpg signing (dev)
 ```bash
 git-buildpackage --git-ignore-new -uc -us

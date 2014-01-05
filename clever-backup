@@ -38,6 +38,7 @@ my $params = {
 		],
 	'excludes'		=> [
 		'/var/cache',
+		'/var/lib',
 		#~ '/usr/lib','/usr/share','/usr/local',
 		#~ '/var/lib/dpkg',
 		#~ '/var/lib/dkms',
@@ -54,10 +55,10 @@ my $params = {
 	'compressionLevel'	=> 9,
 	
 	'debug' 		=> 0, 
-	'dryrun' 		=> 1,
+	'dryrun' 		=> 0,
 	'print-options'		=> 0,
 	'quiet'			=> 0,
-	'verbose'		=> 1,
+	'verbose'		=> 0,
 };
 
 &parseOptionsAndGiveHelp($params);

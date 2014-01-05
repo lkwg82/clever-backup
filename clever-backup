@@ -47,6 +47,7 @@ my $params = {
 		#~ '/var/lib/mlocate',
 	],
 	'fail-on-missing-package-source' => 0,
+	'force-overwrite'	=> 0,
 	'no-pkg-clone'		=> 0,
 	'outputfile'		=> '',
 	
@@ -423,6 +424,7 @@ Needs to be ROOT!
 	    --action		start backup
 	
 	-f, --file		file to be written to, if file is - then STDOUT will be used
+	    --force-overwrite	force overwriting an already existing output file
 	    --fail-on-missing-package-source	
 				sometimes packages were installed manually and changed files could
 				not be effectivily diffed (in case diff is complete file)
@@ -467,6 +469,7 @@ EOT
 	    'action'				=> \$action,
 	    
 	    'f|file=s'				=> \$params->{'outputfile'},
+	    'force-overwrite'			=> \$params->{'force-overwrite'},
 	    'fail-on-missing-package-source=s'	=> \$params->{'fail-on-missing-package-source'},
 	    'no-pkg-clone'			=> \$params->{'no-pkg-clone'},
 	    's|source=s'			=> \@sourceDirectories,
@@ -507,6 +510,7 @@ EOT
 	
 	if ($params->{'dryrun'}){
 		$params->{'outputfile'} ="/dev/null";
+		$params->{'force-overwrite'} = 1;
 	}else{
 		if ($params->{'outputfile'} eq ''){
 			$params->{'outputfile'} = 'backup.tar';
@@ -527,8 +531,11 @@ EOT
 		}
 		elsif ($params->{'outputfile'} eq '-'){
 			$params->{'outputfile'} = '/dev/stdout';
+			$params->{'force-overwrite'} = 1;
 		}
 	}
+	
+	bye " set --force-overwrite if want to overwrite already existing file,\n ",$params->{'outputfile'}," already existing \n\n$help" if ( !$params->{'force-overwrite'} && -f $params->{'outputfile'} );
 	
 	$params->{'compressionCommand'} = &findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
 	

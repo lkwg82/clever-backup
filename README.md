@@ -39,7 +39,7 @@ dpkg -c libarch*perl*deb | grep perllocal.pod > /dev/null &&
 
 add changelog from git commits and commit this changelog 
 ```
-git-dch --release --git-author --commit --id-length=5
+git-dch --release --git-author --commit --id-length=10
 ```
 
 build source package

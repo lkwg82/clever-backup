@@ -1,3 +1,9 @@
+clever-backup (0.1-2ubuntu14) quantal; urgency=low
+
+  * [dc196] fixed instructions
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 13:40:15 +0100
+
 clever-backup (0.1-2ubuntu13) quantal; urgency=low
 
   * [bb3ed] fixed instructions

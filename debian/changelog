@@ -1,10 +1,12 @@
 clever-backup (0.1-2ubuntu15) quantal; urgency=low
 
-  * [dd617] added parameter --force-overwrite
-  * [a29c7] added parameter --no-compression and fixed xz compression
-  * [9c0b1] fixed missing flag quiet
+  * [dd6175d080] added parameter --force-overwrite
+  * [a29c7b1bc2] added parameter --no-compression and fixed xz compression
+  * [9c0b1bcf66] fixed missing flag quiet
+  * [0c194d5c76] Update changelog for 0.1-2ubuntu15 release
+  * [e50e33fe74] increased length of id from 5 to 10 (like github)
 
- -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 14:23:37 +0100
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 14:24:59 +0100
 
 clever-backup (0.1-2ubuntu14) quantal; urgency=low
 

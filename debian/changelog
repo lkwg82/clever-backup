@@ -1,3 +1,16 @@
+clever-backup (0.1-2ubuntu4) quantal; urgency=low
+
+  * removed dependency 'dh-make-perl'
+  * removed version from package name
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 01:37:42 +0100
+
+clever-backup-0.0.1 (1-2ubuntu3) quantal; urgency=low
+
+  * fix dependencies
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 01:14:08 +0100
+
 clever-backup-0.0.1 (1-2ubuntu2) quantal; urgency=low
 
   * removed Carp::Source as module (has problems with a depending module

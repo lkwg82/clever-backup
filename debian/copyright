@@ -1,5 +1,5 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: clever-backup-0.0.1
+Upstream-Name: clever-backup
 Source: https://github.com/lkwg82/clever-backup.git
 
 Files: *

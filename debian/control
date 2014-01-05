@@ -1,4 +1,4 @@
-Source: clever-backup-0.0.1
+Source: clever-backup
 Section: misc
 Priority: extra
 Maintainer: Lars K.W. Gohlke <lkwg82@gmx.de>
@@ -7,9 +7,9 @@ Standards-Version: 3.9.4
 Homepage: https://github.com/lkwg82/clever-backup
 Vcs-Git: https://github.com/lkwg82/clever-backup.git
 
-Package: clever-backup-0.0.1
+Package: clever-backup
 Architecture: all
-Depends: ${misc:Depends}, perl, libfile-slurp-perl, libio-stringy-perl, dlocate, debsums, apt-clone, dh-make-perl, libarchive-tar-stream-perl
+Depends: ${misc:Depends}, perl, libfile-slurp-perl, libio-stringy-perl, dlocate, debsums, apt-clone, libarchive-tar-stream-perl
 Description: Intelligent backup depending on package management
  A backup programm which only takes files
  which are not in a package or changed from the 

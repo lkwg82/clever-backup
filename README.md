@@ -66,7 +66,7 @@ cd Archive*
 dch --distribution=quantal
 
 # create source package
-debuild -S -sa -I.git
+debuild -S -sa -\.git
 
 # publish
 dput ppa:lkwg82/clever-backup libarchive-tar-stream-perl_0.01-1_source.changes

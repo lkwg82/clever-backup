@@ -529,7 +529,6 @@ EOT
 			$params->{'outputfile'} .= $extensions{ $params->{'compression'}};
 			
 			&verbose("default output goes to ".$params->{'outputfile'});
-			
 		}
 		elsif ($params->{'outputfile'} eq '-'){
 			$params->{'outputfile'} = '/dev/stdout';
@@ -650,7 +649,7 @@ sub execute{
 			my $line = shift || confess "missing \$line";
 			my $quiet = shift || confess "missing flag quiet";
 			
-			print STDERR "WARN ".$$line if (!$quiet);
+			print STDERR "WARN ".$$line if (!$$quiet);
 		},
 		'errArgs' => [],
 		'outSub' => sub{
@@ -663,7 +662,7 @@ sub execute{
 		'outArgs' => [\$output],
 	};
 	
-	$defaultConfig->{'errArgs'} = [$defaultConfig->{'quiet'}];
+	$defaultConfig->{'errArgs'} = [\$defaultConfig->{'quiet'}];
 	
 	&mergeDefaultConfigAndPassedConfig($defaultConfig,$config);
 	

@@ -44,7 +44,7 @@ git-dch --release --git-author --commit --id-length=5
 
 build source package
 ```
-git-buildpackage -S --git-tag --git-sign-tags
+git-buildpackage -S --git-tag --git-sign-tags --git-no-create-orig
 ```
 
 upload (read https://help.launchpad.net/Packaging/PPA/Uploading)
@@ -66,7 +66,10 @@ cd Archive*
 dch --distribution=quantal
 
 # create source package
-debuild -S -sa -\.git
+debuild -S -sa -I\.git
+
+# do lintian
+lintian
 
 # publish
 dput ppa:lkwg82/clever-backup libarchive-tar-stream-perl_0.01-1_source.changes

@@ -1,3 +1,11 @@
+clever-backup (0.1-2ubuntu8) quantal; urgency=low
+
+  * [c6f6a] added excludes and deactivated dryrun
+  * [ad6c6] updated package build instructions with git
+  * [b8cb7] removed invalid character from changelog
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 05 Jan 2014 12:11:07 +0100
+
 clever-backup (0.1-2ubuntu7) quantal; urgency=low
 
   * removed git from source package 

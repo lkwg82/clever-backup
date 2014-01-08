@@ -1,7 +1,7 @@
 clever-backup
 =============
 
-makes an intelligent system backup
+Uses system package management to choose intelligently files to backup. This leads to really small backups for a whole system.
 
 
 # debian package

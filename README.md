@@ -3,12 +3,11 @@ clever-backup
 
 Uses system package management to choose intelligently files to backup. This leads to really small backups for a whole system.
 
-## a little benchmark with ubuntu livecd 13.10
+## a little benchmark with xubuntu livecd 13.10
 
-| method | complete command | size | time |
+| method | size | time |complete command | 
   ------ | ---------------- | ---- | ---- 
-| dd    |  |  |  |
-| rsync |  |  |  |
+| rsync | 2340505600 | 2m14 | time tar --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / | pv | wc -c | 
 | clever-backup |  |  |  |
 
 # debian package

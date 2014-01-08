@@ -3,6 +3,7 @@ clever-backup
 
 makes a intelligent system backup
 
+tar compressed 792MB (10m29)
 
 # debian package
 

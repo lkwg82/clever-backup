@@ -3,10 +3,19 @@ clever-backup
 
 Uses system package management to choose intelligently files to backup. This leads to really small backups for a whole system.
 
+## a little benchmark with ubuntu livecd 13.10
+
+| method | complete command | size | time |
+  ------ | ---------------- | ---- | ---- 
+| dd    |  |  |  |
+| rsync |  |  |  |
+| clever-backup |  |  |  |
 
 # debian package
 
 PPA **https://launchpad.net/~lkwg82/+archive/clever-backup**
+
+(on ubuntu universe repository must be activated in /etc/apt/sources.list) 
 
 create package without any gpg signing (dev)
 ```bash

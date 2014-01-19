@@ -1,3 +1,10 @@
+clever-backup (0.1-2ubuntu16) quantal; urgency=low
+
+  * [781b600955] added tar time due to github outage
+  * [49b0fc1b79] fixed #1 - missing unlink of apt-clone file in temp directory
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 19 Jan 2014 22:01:56 +0100
+
 clever-backup (0.1-2ubuntu15) quantal; urgency=low
 
   * [dd6175d080] added parameter --force-overwrite

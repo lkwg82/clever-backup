@@ -766,6 +766,7 @@ sub new{
 		
 		open my $fh,"<$fullname" || confess "could not read $fullname: $^E";
 		$$tar->AddFile($name,-s $fh, $fh);
+		unlink $fullname || confess "could not unlink apt-clone file : $fullname";
 		close($fh);
 		&debug("Done");
 	};

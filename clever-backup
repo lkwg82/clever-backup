@@ -85,7 +85,7 @@ sub execute	{ Util::execute(@_); }
 
 sub createBackupFile{
 	confess "need 4 params " if (scalar(@_) != 4);
-	
+
 	my $filesInNoPackageList 	= shift || confess "need files in no package";
 	my $diffs 			= shift || confess "need diffs";
 	my $missingFiles 		= shift || confess "need missing files";
@@ -523,7 +523,7 @@ EOT
 		bye "missing source $_\n\n$help" unless (-e)
 	}@{$params->{'sourceDirectories'}};
 	
-	bye "quiet and verbose/debug(are mutually exclusive \n\n$help" if ($params->{'quiet'} && ($params->{'debug'} || $params->{'verbose'}));
+	bye "quiet and verbose/debug (are mutually exclusive) \n\n$help" if ($params->{'quiet'} && ($params->{'debug'} || $params->{'verbose'}));
 	
 	$params->{'verbose'}=1 		if ($params->{'debug'});
 	$params->{'print-options'}=1 	if ($params->{'debug'});

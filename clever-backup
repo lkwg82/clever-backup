@@ -15,6 +15,7 @@ use Data::Dumper;
 use File::Basename;
 use File::Copy;
 use File::Find;
+use File::Path;
 use File::Slurp;
 use File::Temp qw/tempfile/;
 use Getopt::Long qw/:config bundling/;
@@ -267,6 +268,7 @@ sub createDiffOfFiles{
 		my $tempDir = $packageSystem->downloadPackageAndExtract($package);
 		my $diff = &makediff($tempDir,$files);
 		push @diffs, $diff;
+		rmtree( $tempDir,{verbose=>1} );
 	};
 	
 	return \@diffs;

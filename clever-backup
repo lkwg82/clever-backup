@@ -50,6 +50,7 @@ my $params = {
 	'force-overwrite'	=> 0,
 	'no-pkg-clone'		=> 0,
 	'outputfile'		=> '',
+	'umask'			=> '0022',
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
@@ -221,6 +222,7 @@ EndOfReadme
 	
 	
 	sub getOutFileHandle{
+		umask $params->{'umask'};
 		my $file = '> '.$params->{'outputfile'};
 					
 		if ( defined($params->{'compressionCommand'}) ){
@@ -431,7 +433,9 @@ Needs to be ROOT!
 	--no-pkg-clone		skipping package cloning, no information about installed packages will be saved
 	-s, --source		use these as source directories (for multiple sources use multiple times )
 				e.g. -s a -s b -s c
+	    --umask             set specific umask for written files, default is 0077
 	-x, --exclude		exclude sources to backed up (same notation as --source)
+	
 	
 debugging
 	-c, --print-o-a-e	prints options and exits
@@ -474,6 +478,7 @@ EOT
 	    'fail-on-missing-package-source=s'	=> \$params->{'fail-on-missing-package-source'},
 	    'no-pkg-clone'			=> \$params->{'no-pkg-clone'},
 	    's|source=s'			=> \@sourceDirectories,
+	    'umask=s'				=> \$params->{'umask'},
 	    'x|exclude=s'			=> \@excludes,
 	    
 	    'c|print-o-a-e'			=> sub { $params->{'print-options'} = 1; $exitAfterOptions = 1;},
@@ -496,6 +501,8 @@ EOT
 	
 	$params->{'sourceDirectories'} = \@sourceDirectories 	if (scalar(@sourceDirectories)>0);
 	$params->{'excludes'} = \@excludes 			if (scalar(@excludes)>0);
+	
+	bye "umask is invalid ".$params->{'umask'}."\n\n$help" if ($params->{'umask'} !~ /^[0-7]{1,4}$/);
 	
 	grep{
 		bye "missing source $_\n\n$help" unless (-e)

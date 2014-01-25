@@ -1,3 +1,17 @@
+clever-backup (0.1-2ubuntu17) quantal; urgency=low
+
+  * [e71132d8b8] Update README.md
+  * [d594482741] Update README.md
+  * [8efef003e9] Update README.md
+  * [a0c55d42de] Update README.md
+  * [1b6f75fe00] Update README.md
+  * [aaad33fef6] Update README.md
+  * [9cf573fab6] fixed #4 - keep backups private (0700)
+  * [3ce61a2a15] fixed #3 - write backup to hidden file and rename it at the end to keep old backups in case of error
+  * [4d40cac265] cleanup
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sat, 25 Jan 2014 15:37:31 +0100
+
 clever-backup (0.1-2ubuntu16) quantal; urgency=low
 
   * [781b600955] added tar time due to github outage

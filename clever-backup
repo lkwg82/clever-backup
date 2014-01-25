@@ -105,6 +105,14 @@ sub createBackupFile{
 	
 	$tar->FinishTar();
 	
+	if ( -f $params->{'outputfile'} ){
+		&verbose("deleting old file");
+		unlink($params->{'outputfile'});
+	}
+	
+	&debug("renaming file .".$params->{'outputfile'}." to ".$params->{'outputfile'});
+	rename  '.'.$params->{'outputfile'}, $params->{'outputfile'} || confess "could not rename .".$params->{'outputfile'}." to ".$params->{'outputfile'};
+	
 	sub addChangedFiles{
 		my $tar = shift || confess "need tar filehandle";
 		my $diffs = shift || confess "need diffs";
@@ -222,8 +230,15 @@ EndOfReadme
 	
 	
 	sub getOutFileHandle{
+		&debug("using umask ".$params->{'umask'});
 		umask $params->{'umask'};
-		my $file = '> '.$params->{'outputfile'};
+		
+		if ( -f '.'.$params->{'outputfile'} ){
+			&debug("removing old temporary file .".$params->{'outputfile'});
+			unlink '.'.$params->{'outputfile'} || confess "could not unlink temporary outputfile .".$params->{'outputfile'};
+		}
+		
+		my $file = '> .'.$params->{'outputfile'};
 					
 		if ( defined($params->{'compressionCommand'}) ){
 			$file = "| ".$params->{'compressionCommand'}." -".$params->{'compressionLevel'}." $file";

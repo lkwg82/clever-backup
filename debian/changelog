@@ -1,3 +1,9 @@
+clever-backup (0.1-2ubuntu19) quantal; urgency=low
+
+  * [9278c513f5] fixed bug when using temporary file and writing to stdout (crashes)
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sun, 26 Jan 2014 13:54:24 +0100
+
 clever-backup (0.1-2ubuntu18) quantal; urgency=low
 
   * [9d322b163d] extracted packages are now removed

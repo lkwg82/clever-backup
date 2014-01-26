@@ -52,6 +52,7 @@ my $params = {
 	'no-pkg-clone'		=> 0,
 	'outputfile'		=> '',
 	'umask'			=> '0022',
+	'write-temp-file'	=> 0,
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
@@ -103,10 +104,10 @@ sub createBackupFile{
 	
 	&verbose("skipping package clone") 	if ( $params->{'no-pkg-clone'});
 	$packageSystem->savePackages(\$tar)	if (!$params->{'no-pkg-clone'});
-	
+		
 	$tar->FinishTar();
 	
-	if ( -f $params->{'outputfile'} ){
+	if ( $params->{'write-temp-file'} && -f $params->{'outputfile'} ){
 		&verbose("deleting old file");
 		unlink($params->{'outputfile'});
 	}
@@ -234,13 +235,21 @@ EndOfReadme
 		&debug("using umask ".$params->{'umask'});
 		umask $params->{'umask'};
 		
-		if ( -f '.'.$params->{'outputfile'} ){
-			&debug("removing old temporary file .".$params->{'outputfile'});
-			unlink '.'.$params->{'outputfile'} || confess "could not unlink temporary outputfile .".$params->{'outputfile'};
-		}
+		my $file = '> ';
 		
-		my $file = '> .'.$params->{'outputfile'};
-					
+		if ( $params->{'write-temp-file'} )
+		{
+			if ( -f '.'.$params->{'outputfile'} ){
+				&debug("removing old temporary file .".$params->{'outputfile'});
+				unlink '.'.$params->{'outputfile'} || confess "could not unlink temporary outputfile .".$params->{'outputfile'};
+			}
+			
+			$file .= '.'.$params->{'outputfile'};	
+		}
+		else{
+			$file .= $params->{'outputfile'};	
+		}
+				
 		if ( defined($params->{'compressionCommand'}) ){
 			$file = "| ".$params->{'compressionCommand'}." -".$params->{'compressionLevel'}." $file";
 		}			
@@ -268,7 +277,7 @@ sub createDiffOfFiles{
 		my $tempDir = $packageSystem->downloadPackageAndExtract($package);
 		my $diff = &makediff($tempDir,$files);
 		push @diffs, $diff;
-		rmtree( $tempDir,{verbose=>1} );
+		rmtree( $tempDir,{verbose=> $params->{'debug'}});
 	};
 	
 	return \@diffs;
@@ -450,6 +459,7 @@ Needs to be ROOT!
 	--no-pkg-clone		skipping package cloning, no information about installed packages will be saved
 	-s, --source		use these as source directories (for multiple sources use multiple times )
 				e.g. -s a -s b -s c
+            --temp-file		writes the output to a temporary file (filename with . in same location)
 	    --umask             set specific umask for written files, default is 0077
 	-x, --exclude		exclude sources to backed up (same notation as --source)
 	
@@ -495,6 +505,7 @@ EOT
 	    'fail-on-missing-package-source=s'	=> \$params->{'fail-on-missing-package-source'},
 	    'no-pkg-clone'			=> \$params->{'no-pkg-clone'},
 	    's|source=s'			=> \@sourceDirectories,
+	    'temp-file'				=> \$params->{'write-temp-file'},
 	    'umask=s'				=> \$params->{'umask'},
 	    'x|exclude=s'			=> \@excludes,
 	    
@@ -521,9 +532,7 @@ EOT
 	
 	bye "umask is invalid ".$params->{'umask'}."\n\n$help" if ($params->{'umask'} !~ /^[0-7]{1,4}$/);
 	
-	grep{
-		bye "missing source $_\n\n$help" unless (-e)
-	}@{$params->{'sourceDirectories'}};
+	grep{	bye "missing source $_\n\n$help" unless (-e)	}@{$params->{'sourceDirectories'}};
 	
 	bye "quiet and verbose/debug (are mutually exclusive) \n\n$help" if ($params->{'quiet'} && ($params->{'debug'} || $params->{'verbose'}));
 	
@@ -557,6 +566,7 @@ EOT
 		elsif ($params->{'outputfile'} eq '-'){
 			$params->{'outputfile'} = '/dev/stdout';
 			$params->{'force-overwrite'} = 1;
+			$params->{'write-temp-file'} = 0;
 		}
 	}
 	

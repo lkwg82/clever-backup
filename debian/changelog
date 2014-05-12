@@ -1,3 +1,9 @@
+clever-backup (0.1-2ubuntu20) trusty; urgency=medium
+
+  * [fc6e1aee46] fixed #9 incompatibility with ubuntu 14.04
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Mon, 12 May 2014 23:15:43 +0200
+
 clever-backup (0.1-2ubuntu19) quantal; urgency=low
 
   * [9278c513f5] fixed bug when using temporary file and writing to stdout (crashes)

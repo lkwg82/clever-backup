@@ -466,7 +466,7 @@ Needs to be ROOT!
 	
 debugging
 	-c, --print-o-a-e	prints options and exits
-	-d, --debug		to be verbose and print some &debug(infos
+	-d, --debug		to be verbose and print some debug infos
 	-n, --dryrun		just make a dryrun, write nothing
 	-p, --print-options	prints configuration (helps to see defaults)
 	-q, --quiet		supress all output

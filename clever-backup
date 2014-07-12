@@ -912,8 +912,8 @@ sub downloadPackageAndExtract{
 			my $currentWD = cwd;
 			chdir $cacheDir;
 			
-			confess "unexpected hashtype: $hashType (expected sha256)" unless ($hashType =~ /sha256/i);
-			
+			confess "unexpected hashtype: $hashType (expected sha type 1|224|256|384|512 )" unless ($hashType =~ /sha(1|224|256|384|512)/i);
+
 			if (-f $file){
 				my $return = execute(lc($hashType)."sum $file");
 				my $output = $return->{'output'};

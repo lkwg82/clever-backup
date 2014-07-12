@@ -1,3 +1,10 @@
+clever-backup (0.1-2ubuntu21) trusty; urgency=medium
+
+  * [40b5e28402] fixed help
+  * [86958ac231] allow any sha 1..512 checksum
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sat, 12 Jul 2014 17:30:17 +0200
+
 clever-backup (0.1-2ubuntu20) trusty; urgency=medium
 
   * [fc6e1aee46] fixed #9 incompatibility with ubuntu 14.04

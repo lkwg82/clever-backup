@@ -220,7 +220,7 @@ EndOfReadme
 			
 			if ( length($linkDestination) == 0){
 				open my $fh, "<$file" || confess "could not open $file";
-				$$tar->AddFile($path,-s $fh,$fh);
+				$$tar->AddFile($path,-s $fh,$fh) || confess "could not read from closed filehand of $file";
 				close($fh);
 			}
 			else{

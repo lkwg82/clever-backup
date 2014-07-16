@@ -1,3 +1,10 @@
+clever-backup (0.1-2ubuntu22) trusty; urgency=medium
+
+  * [dc3d85e6f0] #10 added debug message for already closed filehandle
+  * [fdf44dbc2a] added publish script
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Wed, 16 Jul 2014 21:54:19 +0200
+
 clever-backup (0.1-2ubuntu21) trusty; urgency=medium
 
   * [40b5e28402] fixed help

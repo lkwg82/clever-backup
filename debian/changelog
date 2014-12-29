@@ -1,3 +1,11 @@
+clever-backup (0.1-2ubuntu23) trusty; urgency=medium
+
+  * [ef0631f7e3] fixes #12 (not working temporary file)
+  * [5abf11df58] changed default behaviour
+  * [c9d5b63391] added some pattern for default excludes
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Mon, 29 Dec 2014 01:40:25 +0100
+
 clever-backup (0.1-2ubuntu22) trusty; urgency=medium
 
   * [dc3d85e6f0] #10 added debug message for already closed filehandle

@@ -52,7 +52,8 @@ my $params = {
 	'no-pkg-clone'		=> 0,
 	'outputfile'		=> '',
 	'umask'			=> '0022',
-	'write-temp-file'	=> 0,
+	'write-temp-file'	=> 1,
+	'write-no-temp-file'	=> 0,
 	
 	'compression'		=> 'gzip',
 	'compressionCommand'	=> undef,
@@ -459,7 +460,7 @@ Needs to be ROOT!
 	--no-pkg-clone		skipping package cloning, no information about installed packages will be saved
 	-s, --source		use these as source directories (for multiple sources use multiple times )
 				e.g. -s a -s b -s c
-            --temp-file		writes the output to a temporary file (filename with . in same location)
+	    --no-temp-file	doesnt write the output to a temporary file (filename with appendix '.tmp' in same location)
 	    --umask             set specific umask for written files, default is 0077
 	-x, --exclude		exclude sources to backed up (same notation as --source)
 	
@@ -506,6 +507,7 @@ EOT
 	    'no-pkg-clone'			=> \$params->{'no-pkg-clone'},
 	    's|source=s'			=> \@sourceDirectories,
 	    'temp-file'				=> \$params->{'write-temp-file'},
+	    'no-temp-file'			=> \$params->{'write-no-temp-file'},
 	    'umask=s'				=> \$params->{'umask'},
 	    'x|exclude=s'			=> \@excludes,
 	    
@@ -542,6 +544,7 @@ EOT
 	$params->{'debug'}=0 		if ($params->{'quiet'});
 	$params->{'print-options'}=0 	if ($params->{'quiet'});
 	$params->{'verbose'}=0 		if ($params->{'quiet'});
+	$params->{'write-temp-file'}=0  if ($params->{'write-no-temp-file'});
 	
 	if ($params->{'dryrun'}){
 		$params->{'outputfile'} ="/dev/null";

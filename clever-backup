@@ -113,7 +113,7 @@ sub createBackupFile{
 	}
 	
 	&debug("renaming file .".$params->{'outputfile'}." to ".$params->{'outputfile'});
-	rename  '.'.$params->{'outputfile'}, $params->{'outputfile'} || confess "could not rename .".$params->{'outputfile'}." to ".$params->{'outputfile'};
+	rename  $params->{'outputfile'}.'.temp', $params->{'outputfile'} || confess "could not rename .".$params->{'outputfile'}." to ".$params->{'outputfile'};
 	
 	sub addChangedFiles{
 		my $tar = shift || confess "need tar filehandle";
@@ -239,12 +239,12 @@ EndOfReadme
 		
 		if ( $params->{'write-temp-file'} )
 		{
-			if ( -f '.'.$params->{'outputfile'} ){
+			if ( -f $params->{'outputfile'}.'.temp' ){
 				&debug("removing old temporary file .".$params->{'outputfile'});
-				unlink '.'.$params->{'outputfile'} || confess "could not unlink temporary outputfile .".$params->{'outputfile'};
+				unlink $params->{'outputfile'}.'.temp' || confess "could not unlink temporary outputfile .".$params->{'outputfile'};
 			}
 			
-			$file .= '.'.$params->{'outputfile'};	
+			$file .= $params->{'outputfile'}.'.temp';	
 		}
 		else{
 			$file .= $params->{'outputfile'};	

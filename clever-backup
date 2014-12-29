@@ -40,6 +40,8 @@ my $params = {
 	'excludes'		=> [
 		'/var/cache',
 		'/var/lib',
+		'/home/[^/]+/.cpan/build',
+		'/home/[^/]+/.cpan/sources',
 		#~ '/usr/lib','/usr/share','/usr/local',
 		#~ '/var/lib/dpkg',
 		#~ '/var/lib/dkms',

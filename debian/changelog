@@ -1,3 +1,9 @@
+clever-backup (0.1-2ubuntu25) trusty; urgency=medium
+
+  * [142e1d0182] fixes #13, stacktrace on call
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Mon, 29 Dec 2014 21:28:31 +0100
+
 clever-backup (0.1-2ubuntu24) trusty; urgency=medium
 
   * [ee98f2a645] pimped publish script

@@ -1,3 +1,11 @@
+clever-backup (0.1-2ubuntu24) trusty; urgency=medium
+
+  * [ee98f2a645] pimped publish script
+  * [80e58483f2] cleanup
+  * [64009d9261] added automatical detection of compression method from backup file extension
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Mon, 29 Dec 2014 11:50:04 +0100
+
 clever-backup (0.1-2ubuntu23) trusty; urgency=medium
 
   * [ef0631f7e3] fixes #12 (not working temporary file)

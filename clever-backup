@@ -57,7 +57,7 @@ my $params = {
 	'write-temp-file'	=> 1,
 	'write-no-temp-file'	=> 0,
 	
-	'compression'		=> 'gzip',
+	'compression'		=> undef,
 	'compressionCommand'	=> undef,
 	'compressionLevel'	=> 9,
 	
@@ -452,7 +452,9 @@ Needs to be ROOT!
 	
 	    --action		start backup
 	
-	-f, --file		file to be written to, if file is - then STDOUT will be used
+	-f, --file		file to be written to, 
+	                             if file is - then STDOUT will be used
+				     if file is then 'backup.tar' will be used
 	    --force-overwrite	force overwriting an already existing output file
 	    --fail-on-missing-package-source	
 				sometimes packages were installed manually and changed files could
@@ -462,7 +464,7 @@ Needs to be ROOT!
 				e.g. -s a -s b -s c
 	    --no-temp-file	doesnt write the output to a temporary file (filename with appendix '.tmp' in same location)
 	    --umask             set specific umask for written files, default is 0077
-	-x, --exclude		exclude sources to backed up (same notation as --source)
+	-x, --exclude		exclude sources to backed up (same format as --source)
 	
 	
 debugging
@@ -474,11 +476,13 @@ debugging
 	-v, --verbose		be verbose
 
 compression
+				when no option is given, compression will be detected automatically from extension				
+                                
 	-b, --bzip2		use bzip2 for compression (output will be .tar.bz2)
 	-g, --gzip		use gzip for compression (output will be .tar.gz) (DEFAULT)
 	-l, --lzo		use lzop for compression (output will be .tar.lzo)
-	--level=#		compression level to use (0..9)
-	    --no-compression	dont use any compression
+	--level=#		compression level to use (0..9) (DEFAULT=9)
+	    --no-compression	dont use any compression (output will be a tar)
 	-z, --xz		use xz for compression (output will be .tar.xz)
 EOT
 
@@ -550,18 +554,17 @@ EOT
 		$params->{'outputfile'} ="/dev/null";
 		$params->{'force-overwrite'} = 1;
 	}else{
+		my %extensions = (
+			'bzip2'	=> '.bz2',
+			'gzip'	=> '.gz',
+			'lzo'	=> '.lzo',
+			'xz'	=> '.xz',
+			
+			'none'	=> ''
+		);
+		
 		if ($params->{'outputfile'} eq ''){
 			$params->{'outputfile'} = 'backup.tar';
-			
-			my %extensions = (
-				'bzip2'	=> '.bz2',
-				'gzip'	=> '.gz',
-				'lzo'	=> '.lzo',
-				'xz'	=> '.xz',
-				
-				'none'	=> ''
-			);
-			
 			$params->{'outputfile'} .= $extensions{ $params->{'compression'}};
 			
 			&verbose("default output goes to ".$params->{'outputfile'});
@@ -570,6 +573,21 @@ EOT
 			$params->{'outputfile'} = '/dev/stdout';
 			$params->{'force-overwrite'} = 1;
 			$params->{'write-temp-file'} = 0;
+		}
+		elsif(defined($params->{'compression'})){
+			# overriding automatic compression detection	
+		}
+		else{
+			my %extension2Compression = reverse %extensions;
+			
+			$params->{'outputfile'} =~ /(\.\w{2,3})$/;
+			my $extension = $1;
+			
+			if ( length($extension) > 0  && exists($extension2Compression{$extension})){
+				$params->{'compression'} = $extension2Compression{$extension};
+			}else{
+				$params->{'compression'} = 'none';
+			}
 		}
 	}
 	
@@ -601,7 +619,7 @@ EOT
 		grep{
 			my $cmd = $_;
 			my $return = &execute('which '.$cmd,{'quiet' => 1});
-			&debug(" checked and found $cmd as compression command");
+			&verbose("found $cmd as compression command");
 			return $cmd if ($return->{'exit-code'} == 0);
 		} @{$method2commandMap{ $method }};
 		

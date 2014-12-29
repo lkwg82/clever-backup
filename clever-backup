@@ -565,7 +565,10 @@ EOT
 		
 		if ($params->{'outputfile'} eq ''){
 			$params->{'outputfile'} = 'backup.tar';
-			$params->{'outputfile'} .= $extensions{ $params->{'compression'}};
+			
+			if (defined($params->{'compression'})){
+				$params->{'outputfile'} .= $extensions{ $params->{'compression'}};
+			}
 			
 			&verbose("default output goes to ".$params->{'outputfile'});
 		}
@@ -593,7 +596,7 @@ EOT
 	
 	bye " set --force-overwrite if want to overwrite already existing file,\n ",$params->{'outputfile'}," already existing \n\n$help" if ( !$params->{'force-overwrite'} && -f $params->{'outputfile'} );
 	
-	$params->{'compressionCommand'} = &findAppropriateCompressionCommand($params->{'compression'}) if ( $params->{'compression'} ne 'none');
+	$params->{'compressionCommand'} = &findAppropriateCompressionCommand($params->{'compression'}) if ( defined($params->{'compression'}) && $params->{'compression'} ne 'none');
 	
 	if ($params->{'print-options'}){
 		local $Data::Dumper::Sortkeys=1;

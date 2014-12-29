@@ -80,7 +80,6 @@ my $diffs = &createDiffOfFiles($changed_files_map->{'changed'},$file_to_package_
 &createBackupFile($filesInNoPackageList,$diffs,$changed_files_map->{'missing'}, $packageSystem);
 
 &verbose('duration '. ( time - $start ) . "ms\n");
-#~ <STDIN>;
 
 # ---- subs -----
 
@@ -373,7 +372,6 @@ sub findChangedFiles{
 	};
 	
 	my $max = scalar(@packages);
-	#~ &verbose("$max";
 	my $step = 40;
 	while($max > 0){
 		$step = $max if ($max < $step);
@@ -654,7 +652,6 @@ use strict;
 use warnings;
 
 use Carp qw/longmess cluck confess/;
-#use Carp::Source;
 use IPC::Open3;
 
 sub debug{
@@ -958,8 +955,6 @@ sub populatePackageToFileMap{
 	my $package_to_file_map = &retrieveFromDlocateDB($listOfDirs,$excludes);
 	
 	confess "need no empty package map" if ( scalar(keys %{$package_to_file_map}) == 0 );
-	
-	#~ print Dumper($package_to_file_map);exit;
 	
 	return $package_to_file_map;
 	

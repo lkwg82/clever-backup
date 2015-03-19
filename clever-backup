@@ -12,11 +12,13 @@ use Carp qw/longmess cluck/;
 
 #use Carp::Source;
 use Cwd;
+use Cwd 'abs_path';
 use Data::Dumper;
 use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Path;
+use File::Spec;
 use File::Slurp;
 use File::Temp qw/tempfile/;
 use Getopt::Long qw/:config bundling/;
@@ -205,7 +207,8 @@ EndOfReadme
         my $counter          = 0;
         my %directoryEntries = ();
         while ( my ( $file, $linkDestination ) = each %{$filesInNoPackageList} ) {
-            my $path = $dirForFilesFromNoPackage . "" . $file;
+            my $cpath = File::Spec->canonpath($file);
+            my $path = File::Spec->catdir( ( $dirForFilesFromNoPackage, $cpath ) );
 
             debug("adding $file ($linkDestination) as $path");
 
@@ -536,7 +539,9 @@ EOT
     bye "valid compression levels only 0-9 not " . $params->{'compressionLevel'} . "\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/o );
 
     $params->{'sourceDirectories'} = \@sourceDirectories if ( scalar(@sourceDirectories) > 0 );
-    $params->{'excludes'}          = \@excludes          if ( scalar(@excludes) > 0 );
+    map { $_ = abs_path($_) } @{ $params->{'sourceDirectories'} };
+
+    $params->{'excludes'} = \@excludes if ( scalar(@excludes) > 0 );
 
     bye "umask is invalid " . $params->{'umask'} . "\n\n$help" if ( $params->{'umask'} !~ /^[0-7]{1,4}$/ );
 

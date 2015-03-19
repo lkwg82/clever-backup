@@ -1,12 +1,27 @@
 clever-backup
 =============
 
-Uses system package management to choose intelligently files to backup.* Records packages installed as list, to be reinstalled on restore.* Backups only files ...* ... changed from those originals in packages* ... or which are in none of the installed packages.
+Uses system package management to choose intelligently files to backup.
+* Records packages installed as list, to be reinstalled on restore.
+* Backups only files ...
+ * ... changed from those originals in packages
+ * ... or which are in none of the installed packages.
 
 This leads to really small backups for a whole system.
 
-little benchmark
-================
+## Installation
+```bash
+$ sudo apt-add-repository ppa:lkwg82/clever-backup
+$ sudo apt-get update
+$ sudo apt-get install clever-backup
+```
+
+## usage
+```shell
+root@...:~# clever-backup -h
+```
+
+## little benchmark
 
 (with xubuntu livecd 13.10 in a virtualbox instance)
 
@@ -15,8 +30,7 @@ little benchmark
 | <code>tar</code>           | 2.232mb (792mb) | 2m14 (10m29)   | <code>time tar &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#124; pv &#124; wc -c </code> |
 | <code>clever-backup</code> | 181mb (20mb)    | 4m01 (3m17)    | <code>time clever-backup --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom --action --no-compression -v -f - / &#124; pv &#124; wc -c </code>                                                                                                                                                                                |
 
-development
-===========
+## development
 
 run perltidy before committing
 
@@ -26,12 +40,33 @@ perltidy -b clever-backup
 
 ---
 
-debian packaging
-================
+## debian packaging
+
+### steps to publish to ppa
+
+add changelog from git commits and commit this changelog
+
+```
+git-dch --release --git-author --commit --id-length=10
+```
+
+build source package
+
+```
+git-buildpackage -S -sa --git-tag --git-sign-tags --git-no-create-orig
+```
+
+upload (read https://help.launchpad.net/Packaging/PPA/Uploading\)
+
+```
+dput ppa:lkwg82/clever-backup ../clever-backup-1_1-2ubuntu1_source.changes
+```
 
 PPA **https://launchpad.net/~lkwg82/+archive/clever-backup**
 
 (on ubuntu universe repository must be activated in /etc/apt/sources.list)
+
+### general
 
 create package without any gpg signing (dev)
 
@@ -63,29 +98,9 @@ dpkg -c libarch*perl*deb | grep perllocal.pod > /dev/null &&
 	&& exit 1
 ```
 
-steps to publish to ppa
------------------------
 
-add changelog from git commits and commit this changelog
 
-```
-git-dch --release --git-author --commit --id-length=10
-```
-
-build source package
-
-```
-git-buildpackage -S -sa --git-tag --git-sign-tags --git-no-create-orig
-```
-
-upload (read https://help.launchpad.net/Packaging/PPA/Uploading\)
-
-```
-dput ppa:lkwg82/clever-backup ../clever-backup-1_1-2ubuntu1_source.changes
-```
-
-howto create ppa perl debian package
-------------------------------------
+## howto create ppa perl debian package
 
 ```
 # set some information for changelog

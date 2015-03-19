@@ -1,3 +1,15 @@
+clever-backup (0.1-2ubuntu26) trusty; urgency=medium
+
+  * [9d43dc64d9] fixed help
+  * [78b586fff0] added perltidy
+  * [a04112af36] cleanup help and replaced '--action' with '--do-backup'
+  * [9788408b14] fixed running with local files (removed limitation of having files in package map)
+  * [3be2a7ab87] can handle relative paths
+  * [84d66e6e9b] updated Readme
+  * [afe9ceb74f] fixes #14
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Thu, 19 Mar 2015 19:22:24 +0100
+
 clever-backup (0.1-2ubuntu25) trusty; urgency=medium
 
   * [142e1d0182] fixes #13, stacktrace on call

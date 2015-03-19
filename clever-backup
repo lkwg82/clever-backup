@@ -454,7 +454,7 @@ Needs to be ROOT!
 	
 	-f, --file		file to be written to, 
 	                             if file is - then STDOUT will be used
-				     if file is then 'backup.tar' will be used
+				     if file is empty then 'backup.tar' will be used
 	    --force-overwrite	force overwriting an already existing output file
 	    --fail-on-missing-package-source	
 				sometimes packages were installed manually and changed files could

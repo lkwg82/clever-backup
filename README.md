@@ -29,7 +29,7 @@ root@...:~# clever-backup -h
 | method | <code>tar<sup>1</sup></code> | <code>clever-backup<sup>2</sup></code> | ratio |
 | -- | -- | -- | -- |
 | size | 2.2 GB | 0.18 GB | 12:1 |
-| size (gzipped) | 0.79 GB | 0.02 GB | 40:1 |
+| size (gzipped) | 0.8 GB | 0.02 GB | 40:1 |
 |  |  |  |  |
 | time | 02:14 Min | 04:01 Min | 1:1.8 |
 | time (gzipped)| 10:29 Min | 03:17 Min| 3:1|

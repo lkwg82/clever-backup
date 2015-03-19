@@ -2,3 +2,4 @@ debian/clever-backup-*
 debian/files
 
 clever-backup.pl
+*.bak

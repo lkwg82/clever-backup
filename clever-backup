@@ -355,8 +355,6 @@ sub findChangedFiles {
     my $file_to_package_map = shift || confess "need file to package map";
     my $packageSystem       = shift || confess "need missing packageSystem";
 
-    confess "file to package map is empty" if ( scalar( keys %{$file_to_package_map} ) == 0 );
-
     &verbose("find changed files");
 
     my %packages = map { $$_ => 1 } ( values %{$file_to_package_map} );
@@ -982,8 +980,6 @@ sub populatePackageToFileMap {
     my $excludes   = shift || confess "need list of excludes";
 
     my $package_to_file_map = &retrieveFromDlocateDB( $listOfDirs, $excludes );
-
-    confess "need no empty package map" if ( scalar( keys %{$package_to_file_map} ) == 0 );
 
     return $package_to_file_map;
 

@@ -26,8 +26,8 @@ root@...:~# clever-backup -h
 
 (with xubuntu livecd 13.10 in a virtualbox instance)
 
-| method | <code>tar<sup>1</sup></code> | <code>clever-backup<sup>2</sup></code> | ratio |
-| -- | -- | -- | -- |
+| method | <code>tar<sup>1</sup></code> | <code>clever-backup<sup>2</sup></code> | ratio | 
+| ------ | ---------------------------- | -------------------------------------- | ----- |
 | size | 2.2 GB | 0.18 GB | 12:1 |
 | size (gzipped) | 0.8 GB | 0.02 GB | 40:1 |
 |  |  |  |  |

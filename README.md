@@ -1,7 +1,12 @@
 clever-backup
 =============
 
-Uses system package management to choose intelligently files to backup.* Records packages installed as list, to be reinstalled on restore.* Backups only files ...* ... changed from those originals in packages* ... or which are in none of the installed packages.
+Uses system package management to choose intelligently files to backup.
+
+-	Records packages installed as list, to be reinstalled on restore.
+-	Backups only files ...
+	-	... changed from those originals in packages
+	-	... or which are in none of the installed packages.
 
 This leads to really small backups for a whole system.
 
@@ -10,10 +15,17 @@ little benchmark
 
 (with xubuntu livecd 13.10 in a virtualbox instance)
 
-| method                     | size (gzipped)  | time (gzipped) | complete command                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-|----------------------------|-----------------|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <code>tar</code>           | 2.232mb (792mb) | 2m14 (10m29)   | <code>time tar &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#124; pv &#124; wc -c </code> |
-| <code>clever-backup</code> | 181mb (20mb)    | 4m01 (3m17)    | <code>time clever-backup --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom --action --no-compression -v -f - / &#124; pv &#124; wc -c </code>                                                                                                                                                                                |
+| method | <code>tar<sup>1</sup></code> | <code>clever-backup<sup>2</sup></code> | ratio |
+| -- | -- | -- | -- |
+| size | 2.2 GB | 0.18 GB | 12:1 |
+| size (gzipped) | 0.79 GB | 0.02 GB | 40:1 |
+|  |  |  |  |
+| time | 02:14 Min | 04:01 Min | 1:1.8 |
+| time (gzipped)| 10:29 Min | 03:17 Min| 3:1|
+
+<sup>1</sup><code>time tar &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#124; pv &#124; wc -c </code>
+<sup>2</sup><code>time clever-backup --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom --action --no-compression -v -f - / &#124; pv &#124; wc -c </code>
+
 
 development
 ===========

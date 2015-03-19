@@ -82,3 +82,11 @@ lintian
 # publish
 dput ppa:lkwg82/clever-backup libarchive-tar-stream-perl_0.01-1_source.changes
 ```
+
+
+# development
+
+run perltidy before committing
+```bash
+perltidy -b clever-backup
+```

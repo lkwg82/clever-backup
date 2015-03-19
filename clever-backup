@@ -37,17 +37,23 @@ my $start  = time;
 my $params = {
     'sourceDirectories' => [ '/etc', '/usr', '/var/log', '/var/spool', ],
     'excludes'          => [
+
+        # system directories
+        '/proc',
+        '/sys',
+        '/usr/lib',
+        '/usr/local',
+        '/usr/share',
         '/var/cache',
-        '/var/lib',
+        '/var/lib/dpkg',
+        '/var/lib/dkms',
+        '/var/lib/dlocate',
+        '/var/lib/gems',
+        '/var/lib/mlocate',
+
+        # user directories
         '/home/[^/]+/.cpan/build',
         '/home/[^/]+/.cpan/sources',
-
-        #~ '/usr/lib','/usr/share','/usr/local',
-        #~ '/var/lib/dpkg',
-        #~ '/var/lib/dkms',
-        #~ '/var/lib/dlocate',
-        #~ #'/var/lib/gems',
-        #~ '/var/lib/mlocate',
     ],
     'fail-on-missing-package-source' => 0,
     'force-overwrite'                => 0,

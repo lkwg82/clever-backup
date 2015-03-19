@@ -449,42 +449,42 @@ tories.
 
 Needs to be ROOT!
 
-	-h, --help		show this help 
-	
-	    --action		start backup
-	
-	-f, --file		file to be written to, 
-	                             if file is - then STDOUT will be used
-				     if file is empty then 'backup.tar' will be used
-	    --force-overwrite	force overwriting an already existing output file
-	    --fail-on-missing-package-source	
-				sometimes packages were installed manually and changed files could
-				not be effectivily diffed (in case diff is complete file)
-	--no-pkg-clone		skipping package cloning, no information about installed packages will be saved
-	-s, --source		use these as source directories (for multiple sources use multiple times )
-				e.g. -s a -s b -s c
-	    --no-temp-file	doesnt write the output to a temporary file (filename with appendix '.tmp' in same location)
-	    --umask             set specific umask for written files, default is 0077
-	-x, --exclude		exclude sources to backed up (same format as --source)
-	
-	
+    -h, --help               show this help 
+    
+        --do-backup          start backup
+    
+    -f, --file               file to be written to, 
+                               if file is - then STDOUT will be used
+                               if file is empty then 'backup.tar' will be used
+        --force-overwrite    force overwriting an already existing output file
+        --fail-on-missing-package-source    
+                             sometimes packages were installed manually and changed files could
+                             not be effectivily diffed (in case diff is complete file)
+        --no-pkg-clone       skipping package cloning, no information about installed packages will be saved
+    -s, --source             use these as source directories (for multiple sources use multiple times )
+                               e.g. -s /etc -s /var -s /home
+        --no-temp-file       doesnt write the output to a temporary file (filename with appendix '.tmp' in same location)
+        --umask              set specific umask for written files, default is 0077
+    -x, --exclude            exclude sources to backed up (same format as --source)
+    
+    
 debugging
-	-c, --print-o-a-e	prints options and exits
-	-d, --debug		to be verbose and print some debug infos
-	-n, --dryrun		just make a dryrun, write nothing
-	-p, --print-options	prints configuration (helps to see defaults)
-	-q, --quiet		supress all output
-	-v, --verbose		be verbose
+    -c, --print-o-a-e        prints options and exits
+    -d, --debug              to be verbose and print some debug infos
+    -n, --dryrun             just make a dryrun, write nothing
+    -p, --print-options      prints configuration (helps to see defaults)
+    -q, --quiet              supress all output
+    -v, --verbose            be verbose
 
 compression
-				when no option is given, compression will be detected automatically from extension				
+    when no option is given, compression will be detected automatically from extension                
                                 
-	-b, --bzip2		use bzip2 for compression (output will be .tar.bz2)
-	-g, --gzip		use gzip for compression (output will be .tar.gz) (DEFAULT)
-	-l, --lzo		use lzop for compression (output will be .tar.lzo)
-	--level=#		compression level to use (0..9) (DEFAULT=9)
-	    --no-compression	dont use any compression (output will be a tar)
-	-z, --xz		use xz for compression (output will be .tar.xz)
+    -b, --bzip2              use bzip2 for compression (output will be .tar.bz2)
+    -g, --gzip               use gzip for compression (output will be .tar.gz) (DEFAULT)
+    -l, --lzo                use lzop for compression (output will be .tar.lzo)
+        --level=#            compression level to use (0..9) (DEFAULT=9)
+        --no-compression     dont use any compression (output will be a tar)
+    -z, --xz                 use xz for compression (output will be .tar.xz)
 EOT
 
     sub bye {
@@ -504,7 +504,10 @@ EOT
     GetOptions(
         'h|help' => sub { print $help; exit },
 
-        'action' => \$action,
+        'do-backup' => \$action,
+
+        # for compatibility for old --action
+        'action' => sub { warn('WARNING please use --do-backup'); $action = 1; },
 
         'f|file=s'                         => \$params->{'outputfile'},
         'force-overwrite'                  => \$params->{'force-overwrite'},
@@ -531,7 +534,7 @@ EOT
         'z|xz'           => sub { $params->{'compression'} = 'xz'; },
     ) or bye "Try '$0 --help' for more information.\n";
 
-    bye "please use --action to start backup \n\n$help" if ( !$action );
+    bye "please use --do-backup to start backup \n\n$help" if ( !$action );
     bye "valid compression levels only 0-9 not " . $params->{'compressionLevel'} . "\n\n$help" if ( $params->{'compressionLevel'} !~ /^[0-9]$/o );
 
     $params->{'sourceDirectories'} = \@sourceDirectories if ( scalar(@sourceDirectories) > 0 );

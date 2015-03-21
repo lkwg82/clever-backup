@@ -19,7 +19,7 @@ $ sudo apt-get install clever-backup
 
 ## usage
 ```shell
-root@...:~# clever-backup -h
+root@...:~# clever-backup -f /backup/clever-backup/backup_$(date +%d).tar.bz -s /etc -s /var -s /opt --do-backup
 ```
 
 ## little benchmark

@@ -34,7 +34,7 @@ root@...:~# clever-backup -h
 | time | 02:14 Min | 04:01 Min | 1:1.8 |
 | time (gzipped)| 10:29 Min | 03:17 Min| 3:1|
 
-<sup>1</sup><code>time tar &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#124; pv &#124; wc -c </code>
+<sup>1</sup><code>time tar --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom -cf - / &#124; pv &#124; wc -c </code>
 
 <sup>2</sup><code>time clever-backup --exclude=/dev --exclude=/proc --exclude=/run --exclude=/sys --exclude=/tmp --exclude=/var/lib/dpkg --exclude=/var/lib/apt --exclude=/var/lib/dlocate --exclude=/var/lib/mlocate/ --exclude=/rofs --exclude=/cdrom --action --no-compression -v -f - / &#124; pv &#124; wc -c </code>
 

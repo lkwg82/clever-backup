@@ -129,5 +129,5 @@ debuild -S -sa -I\.git
 lintian
 
 # publish
-dput ppa:lkwg82/clever-backup libarchive-tar-stream-perl_0.01-1_source.changes
+dput ppa:lkwg82/clever-backup ../libarchive-tar-stream-perl_0.01-1_source.changes
 ```

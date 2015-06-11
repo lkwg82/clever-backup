@@ -130,7 +130,6 @@ sub createBackupFile {
         &verbose("adding diffs to archive");
 
         my $dirForChangedFiles = 'changed';
-        $$tar->AddLink( $dirForChangedFiles, $dirForChangedFiles, ( 'typeflag' => 5 ) );
 
         grep {
             while ( my ( $file, $metadata ) = each %{$_} )
@@ -161,7 +160,6 @@ sub createBackupFile {
         &verbose("adding missing files to archive");
 
         my $dirForMissingFiles = 'missing';
-        $$tar->AddLink( $dirForMissingFiles, $dirForMissingFiles, ( 'typeflag' => 5 ) );
 
         grep {
             my $path = $dirForMissingFiles . "" . $_;
@@ -208,7 +206,6 @@ EndOfReadme
         &verbose("adding no-package files to archive");
 
         my $dirForFilesFromNoPackage = 'no_package';
-        $$tar->AddLink( $dirForFilesFromNoPackage, $dirForFilesFromNoPackage, ( 'typeflag' => 5 ) );
 
         my $counter          = 0;
         my %directoryEntries = ();
@@ -223,7 +220,6 @@ EndOfReadme
             # entries looking like links too
             my $dir = dirname($path);
             if ( !exists $directoryEntries{$dir} ) {
-                $$tar->AddLink( $dir, $dir, ( 'typeflag' => 5 ) );
                 $directoryEntries{$dir} = \1;
             }
 

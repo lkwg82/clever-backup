@@ -1,3 +1,19 @@
+clever-backup (0.1-2ubuntu27) vivid; urgency=medium
+
+  * [0bd48afaba] added pushing git tags
+  * [f87d94250f] added changelog-script
+  * [96d3fe0c7e] Update README.md
+  * [88f98cbea4] updated Readme
+  * [ce920e1d10] cleanup
+  * [66e7af94d1] Update README.md
+  * [f9b05b31be] Update README.md
+  * [d5ec0438bb] Update README.md
+  * [b3703a6561] added example
+  * [3f72a24f77] Update README.md
+  * [fdb0a48895] fixed to many symbolic links
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Thu, 11 Jun 2015 10:58:39 +0200
+
 clever-backup (0.1-2ubuntu26) trusty; urgency=medium
 
   * [9d43dc64d9] fixed help

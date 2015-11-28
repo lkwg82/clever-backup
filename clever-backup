@@ -786,14 +786,13 @@ sub createPackageSystem {
     my $params = shift || confess "need to now params";
     
     if (-f "/etc/debian_version"){
-	return Debian->new($params);
+        return Debian->new($params);
     }
     elsif (-f "/etc/redhat-release"){
-	return Redhat->new($params);
+        return Redhat->new($params);
     }
-    else{
-	confess "not supported packaging system";
-    }
+        
+    confess "not supported packaging system";
 }
 
 # ----------------------------------------------------------------------------------

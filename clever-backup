@@ -924,35 +924,36 @@ sub new {
     bless $self, $class;
 
     $self->{'params'}          = $params;
-    $self->{'addFileAptClone'} = sub {
-        my $tar = shift || confess "need tar filehandle";
-
-        my $basename = "clone";
-        my $name     = $basename . ".apt-clone.tar.gz";
-        my $tempdir  = tempdir( CLEANUP => 0, UNLINK => 0 );
-        my $fullname = catfile( $tempdir, $name );
-
-        &verbose("doing apt-clone");
-
-        &verbose("executing apt-clone");
-        my $currentWD = cwd;
-        chdir $tempdir;
-
-        &debug("changed into $tempdir");
-        execute( "apt-clone clone --with-dpkg-status --with-dpkg-repack " . $basename );
-        &debug("finished apt-clone");
-
-        chdir $currentWD;
-
-        open my $fh, "<$fullname" || confess "could not read $fullname: $^E";
-        $$tar->AddFile( $name, -s $fh, $fh );
-        unlink $fullname || confess "could not unlink apt-clone file : $fullname";
-        close($fh);
-        &debug("Done");
-    };
 
     return $self;
 }
+
+sub addFileAptClone {
+    my $tar = shift || confess "need tar filehandle";
+
+    my $basename = "clone";
+    my $name     = $basename . ".apt-clone.tar.gz";
+    my $tempdir  = tempdir( CLEANUP => 0, UNLINK => 0 );
+    my $fullname = catfile( $tempdir, $name );
+
+    &verbose("doing apt-clone");
+
+    &verbose("executing apt-clone");
+    my $currentWD = cwd;
+    chdir $tempdir;
+
+    &debug("changed into $tempdir");
+    execute( "apt-clone clone --with-dpkg-status --with-dpkg-repack " . $basename );
+    &debug("finished apt-clone");
+
+    chdir $currentWD;
+
+    open my $fh, "<$fullname" || confess "could not read $fullname: $^E";
+    $$tar->AddFile( $name, -s $fh, $fh );
+    unlink $fullname || confess "could not unlink apt-clone file : $fullname";
+    close($fh);
+    &debug("Done");
+};
 
 sub checkPackageHashSums {
     confess "need 5 params " if ( scalar(@_) != 5 );
@@ -1016,7 +1017,7 @@ sub savePackages {
     confess "need 2 params " if ( scalar(@_) != 2 );
     my ( $self, $tarStreamRef ) = @_;
 
-    $self->{'addFileAptClone'}->($tarStreamRef);
+    &addFileAptClone($tarStreamRef);
 }
 
 sub downloadPackageAndExtract {

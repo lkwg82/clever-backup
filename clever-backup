@@ -616,8 +616,10 @@ EOT
         grep {
             my $cmd = $_;
             my $return = &execute( 'which ' . $cmd, { 'quiet' => 1 } );
-            &verbose("found $cmd as compression command");
-            return $cmd if ( $return->{'exit-code'} == 0 );
+            if ( $return->{'exit-code'} == 0 ){
+                &verbose("found $cmd as compression command");
+                return $cmd ;
+            }
         } @{ $method2commandMap{$method} };
 
         confess "could not find any compression commands for '" . $method . "'";
@@ -714,9 +716,8 @@ sub execute {
         'outArgs' => [ \$output ],
     };
 
-    $defaultConfig->{'errArgs'} = [ \$defaultConfig->{'quiet'} ];
-
     &mergeDefaultConfigAndPassedConfig( $defaultConfig, $config );
+    $config->{'errArgs'} = [ \$config->{'quiet'} ];
 
     sub mergeDefaultConfigAndPassedConfig {
         my $defaultConfig = shift || confess "missing default configuration";
@@ -730,7 +731,7 @@ sub execute {
         } ( keys %{$defaultConfig} );
     }
 
-    &debug( 'executing ' . $command );
+    &debug( 'executing "' . $command.'"');
 
     my $pid = open3( *IN, *OUT, *ERR, $command ) || confess "error executing '$command': $^E";
     close(IN);

@@ -76,7 +76,7 @@ my $params = {
 
 &parseOptionsAndGiveHelp($params);
 
-my $packageSystem = Debian->new($params);
+my $packageSystem = Util->createPackageSystem($params);
 
 my $file_to_package_map = &populateFileToPackageMap( $params->{'sourceDirectories'}, $params->{'excludes'}, $packageSystem );
 my $filesInNoPackageList = &findFilesToBeBackedUpBecauseInNoPackage( $params->{'sourceDirectories'}, $params->{'excludes'}, $file_to_package_map );
@@ -780,6 +780,115 @@ sub verbose {
         chomp($line);
         print STDERR "$line\n";
     }
+}
+
+sub createPackageSystem {
+    my $params = shift || confess "need to now params";
+    
+    if (-f "/etc/debian_version"){
+	return Debian->new($params);
+    }
+    elsif (-f "/etc/redhat-release"){
+	return Redhat->new($params);
+    }
+    else{
+	confess "not supported packaging system";
+    }
+}
+
+# ----------------------------------------------------------------------------------
+#
+#  Redhat
+#
+# ----------------------------------------------------------------------------------
+
+package Redhat;
+
+use strict;
+use warnings;
+
+use Carp qw/longmess cluck confess/;
+use Cwd;
+use Data::Dumper;
+use File::Basename;
+use File::Copy;
+use File::Find;
+use File::Spec::Functions qw/catfile/;
+use File::Temp qw/tempdir/;
+
+sub debug   { Util::debug(@_); }
+sub verbose { Util::verbose(@_); }
+sub execute { Util::execute(@_); }
+
+sub new {
+    my $class = shift;
+    my $params = shift || confess "need to now params";
+
+    my $self = {};
+    bless $self, $class;
+
+    $self->{'params'}          = $params;
+
+    return $self;
+}
+
+sub populatePackageToFileMap {
+    my $self       = shift || confess "need myself";
+    my $listOfDirs = shift || confess "need list of dirs";
+    my $excludes   = shift || confess "need list of excludes";
+
+    my $package_to_file_map = {};
+    find(
+        {
+            wanted => sub {
+                my $item = $_;
+                
+                debug ((-d $item ? "d":"f")." ".$item."\n");
+                
+                my $investigation = execute("rpm -qf $item");
+                
+                return if ( $investigation->{'exit-code'} > 0);
+                    
+                my $package = $investigation->{'output'};
+                
+                my @package_list=split("\n",$package);
+                if (scalar(@package_list) > 1){
+                    $package = $package_list[0];
+                }
+                
+                debug "item $item ($package)";
+                
+                if ( Main::isAcceptedPath( $listOfDirs, $excludes, \$item ) ) {
+                    if ( !exists( $package_to_file_map->{$package} ) ) {
+                            $package_to_file_map->{$package} = [];
+                    }
+
+                    push @{ $package_to_file_map->{$package} }, $item;
+                }
+            },
+            follow   => 0,
+            no_chdir => 1
+        },
+        @{$listOfDirs}
+    );
+
+    return $package_to_file_map;
+}
+
+sub filterOutNotInstalledPackages {
+    confess "need 2 params " if ( scalar(@_) != 2 );
+    my $self     = shift || confess "need myself";
+    my $packages = shift || confess "need hash ref";
+    
+    # not implemented yet
+    
+    return [];
+}
+
+sub savePackages {
+    confess "need 2 params " if ( scalar(@_) != 2 );
+    my ( $self, $tarStreamRef ) = @_;
+    # not implemented yet
 }
 
 # ----------------------------------------------------------------------------------

@@ -624,9 +624,7 @@ sub isAcceptedPath {
     my $file       = shift || confess "need file";
 
     grep {
-        if ( $$file =~ m{^$_} )
-        {
-
+        if ( $$file =~ m{^$_} ){
             return 0 if ( &isExcludedPath( $excludes, $file ) );
 
             # not accept directories
@@ -818,22 +816,22 @@ sub populatePackageToFileMap {
             wanted => sub {
                 my $item = $_;
                 
-                debug ((-d $item ? "d":"f")." ".$item."\n");
-                
-                my $investigation = execute("rpm -qf $item");
-                
-                return if ( $investigation->{'exit-code'} > 0);
-                    
-                my $package = $investigation->{'output'};
-                
-                my @package_list=split("\n",$package);
-                if (scalar(@package_list) > 1){
-                    $package = $package_list[0];
-                }
-                
-                debug "item $item ($package)";
-                
                 if ( Main::isAcceptedPath( $listOfDirs, $excludes, \$item ) ) {
+                
+                    debug ((-d $item ? "d":"f")." ".$item."\n");
+                    
+                    my $investigation = execute("rpm -qf $item");
+                    return if ( $investigation->{'exit-code'} > 0);
+                        
+                    my $package = $investigation->{'output'};
+                    
+                    my @package_list=split("\n",$package);
+                    if (scalar(@package_list) > 1){
+                        $package = $package_list[0];
+                    }
+                    
+                    debug "item $item ($package)";
+                
                     if ( !exists( $package_to_file_map->{$package} ) ) {
                             $package_to_file_map->{$package} = [];
                     }

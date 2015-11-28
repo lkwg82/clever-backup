@@ -7,9 +7,7 @@ use strict;
 use warnings;
 
 use Archive::Tar::Stream;
-
 use Carp qw/longmess cluck/;
-
 #use Carp::Source;
 use Cwd;
 use Cwd 'abs_path';
@@ -295,9 +293,6 @@ sub createDiffOfFiles {
         my %diff = ();
 
         if ( defined($tempdir) ) {
-            my $currentWD = cwd;
-            chdir $tempdir;
-
             grep {
                 &debug("diffing $_\n");
 
@@ -305,30 +300,37 @@ sub createDiffOfFiles {
                 ( my $original = $_ ) =~ s/^\///o;
 
                 if (-T) {    # if text-file
-                    &debug(" in $tempdir");
-
-                    my $return = &execute("diff -u $original $changed");
-                    my $diff   = $return->{'output'};
-
-                    if ( defined($diff) ) {
-                        $diff{$changed} = { 'type' => 'text', 'data' => $diff, 'comment' => 'unified diff' };
+                    my $diff;
+                    # some packages create files, so there is no original one inside the package
+                    if (-e "$tempdir/$original"){
+                        my $return = &execute("diff -u $tempdir/$original $changed");
+                        $diff   = $return->{'output'};
                     }
+                    else{
+                        $diff = read_file($changed);
+                    }
+                        
+                    $diff{$changed} = { 
+                        'type' => 'text', 
+                        'data' => $diff, 
+                        'comment' => 'unified diff' 
+                    };
                 }
                 else {
                     my ( $fh, $tempfile ) = tempfile( CLEANUP => 1, UNLINK => 1 );
 
-                    &execute("bsdiff $original $changed $tempfile");
+                    &execute("bsdiff $tempdir/$original $changed $tempfile");
 
                     my $binaryDiff = read_file( $tempfile, { binmode => ':raw' } );
 
-                    my $encoded = MIME::Base64::encode($binaryDiff);
-                    $diff{$changed} = { 'type' => 'binary', 'data' => $encoded, 'comment' => 'base64 encoded bsdiff' };
+                    $diff{$changed} = { 
+                        'type' => 'binary', 
+                        'data' => MIME::Base64::encode($binaryDiff), 
+                        'comment' => 'base64 encoded bsdiff' 
+                    };
                 }
             } @{$files};
-
-            chdir $currentWD;
         }
-
         return \%diff;
     }
 
@@ -362,26 +364,7 @@ sub findChangedFiles {
 
     &verbose("find changed files");
 
-    my %packages = map { $$_ => 1 } ( values %{$file_to_package_map} );
-
-    my @packages = @{ $packageSystem->filterOutNotInstalledPackages( \%packages ) };
-
-    my $changedFiles = {
-        'changed' => [],
-        'missing' => []
-    };
-
-    my $max  = scalar(@packages);
-    my $step = 40;
-    while ( $max > 0 ) {
-        $step = $max if ( $max < $step );
-        my @temporaryList = splice @packages, 0, $step;
-        $changedFiles = $packageSystem->detectChangedFileFromInstalledPackages( $listOfDirs, $excludes, $changedFiles, join( ' ', @temporaryList ) );
-
-        $max -= $step;
-    }
-
-    return $changedFiles;
+    return $packageSystem->detectChangedFileFromInstalledPackages($listOfDirs,$excludes,$file_to_package_map);
 }
 
 sub findFilesToBeBackedUpBecauseInNoPackage {
@@ -588,7 +571,6 @@ EOT
             $params->{'write-temp-file'} = 0;
         }
         elsif ( defined( $params->{'compression'} ) ) {
-
             # overriding automatic compression detection
         }
         else {
@@ -621,8 +603,8 @@ EOT
     sub findAppropriateCompressionCommand {
 
         my %method2commandMap = (
-            'bzip2' => [ 'pbzip2', 'bzip2' ],
-            'gzip'  => [ 'pigz',   'gzip' ],
+            'bzip2' => ['pbzip2', 'bzip2' ],
+            'gzip'  => ['pigz',   'gzip' ],
             'lzo'   => ['lzop'],
             'xz'    => ['xz']
         );
@@ -807,13 +789,14 @@ use strict;
 use warnings;
 
 use Carp qw/longmess cluck confess/;
+use Config;
 use Cwd;
 use Data::Dumper;
 use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Spec::Functions qw/catfile/;
-use File::Temp qw/tempfile/;
+use File::Temp qw/tempdir tempfile/;
 
 sub debug   { Util::debug(@_); }
 sub verbose { Util::verbose(@_); }
@@ -879,9 +862,7 @@ sub filterOutNotInstalledPackages {
     my $self     = shift || confess "need myself";
     my $packages = shift || confess "need hash ref";
     
-    # not implemented yet
-    
-    return [];
+    return [keys %{$packages}];
 }
 
 sub savePackages {
@@ -900,8 +881,88 @@ sub savePackages {
     
     open my $fh, "<$filename" || confess "could not read $filename: $^E";
     $$tarStreamRef->AddFile( "yum-installed-packages.list", -s $fh, $fh );
-    unlink $filename || confess "could not unlink apt-clone file : $filename";
     close($fh);
+    unlink $filename || confess "could not unlink apt-clone file : $filename";
+}
+
+sub detectChangedFileFromInstalledPackages {
+    confess "need 4 params " if ( scalar(@_) != 4 );
+
+    my $self         = shift || confess "need myself";
+    my $listOfDirs   = shift || confess "need list of dirs";
+    my $excludes     = shift || confess "need list of excludes";
+    my $file_to_package_map = shift || confess "need file to package map";
+    
+    my $changedFiles = {
+        'changed' => [],
+        'missing' => []
+    };
+
+    my $command = "rpm -aV";
+    my $config  = {
+        'outSub'  => \&handleOutput,
+        'outArgs' => [ $listOfDirs, $excludes, $changedFiles ]
+    };
+    execute( $command, $config );
+
+    sub handleOutput {
+        my $file         = shift || confess "missing \$file";
+        my $listOfDirs   = shift || confess "need list of dirs";
+        my $excludes     = shift || confess "need list of excludes";
+        my $changedFiles = shift || confess "need changed files";
+
+        (my $path = $$file) =~ s/.* (\/.*)/$1/g;
+        chomp($path);
+
+        if ( Main::isAcceptedPath( $listOfDirs, $excludes, \$path ) ) {
+            push @{ $changedFiles->{'changed'} }, $path;
+        }
+
+        return $changedFiles;
+    }
+
+    return $changedFiles;
+}
+
+sub downloadPackageAndExtract {
+    my $self    = shift || confess "need myself";
+    my $package = shift || confess "need package";
+    
+    chomp($package);
+    my $tempdir = tempdir( CLEANUP => 1, UNLINK => 1 );
+    
+    &verbose("downloading & extracting '$package'");
+
+    my $file = &downloadPackage( \$package, \$tempdir );
+
+    my $return = execute("rpm2cpio $tempdir/$file | cpio --extract --preserve-modification-time --make-directories --quiet --unconditional");
+    if ( $return->{'exit-code'} > 0 ){
+        confess "error while extracting $file";
+    }        
+
+    return $tempdir;
+
+    sub downloadPackage {
+        my $package = shift || confess "need package";
+        my $tempdir = shift || confess "need tempdir";
+        
+        my $arch;
+        if ( $Config{"archname"} =~ /^x86_64.*/ ) {
+            $arch = 'amd64';
+        }
+        else{
+            confess "unknown architecture: ".$Config{"archname"};
+        }
+        
+        my $return = execute("yumdownloader --destdir=$$tempdir --archlist=$arch $$package");
+        if ( $return->{'exit-code'} > 0 ){
+            confess "error while downloading $$package";
+        }        
+
+        my @rpms = glob("*rpm");
+
+        return $rpms[0];
+    }
 }
 
 # ----------------------------------------------------------------------------------
@@ -963,51 +1024,75 @@ sub addFileAptClone {
 
     open my $fh, "<$fullname" || confess "could not read $fullname: $^E";
     $$tar->AddFile( $name, -s $fh, $fh );
-    unlink $fullname || confess "could not unlink apt-clone file : $fullname";
     close($fh);
+    unlink $fullname || confess "could not unlink apt-clone file : $fullname";
     &debug("Done");
 };
 
 sub detectChangedFileFromInstalledPackages {
-    confess "need 5 params " if ( scalar(@_) != 5 );
+    confess "need 4 params " if ( scalar(@_) != 4 );
 
     my $self         = shift || confess "need myself";
     my $listOfDirs   = shift || confess "need list of dirs";
     my $excludes     = shift || confess "need list of excludes";
-    my $changedFiles = shift || confess "need changed files";
-    my $packages     = shift || confess "need package string";
-
-    my $command = "debsums -ac " . $packages;
-    my $config  = {
-        'outSub'  => \&handleOutput,
-        'outArgs' => [ $listOfDirs, $excludes, $changedFiles ]
+    my $file_to_package_map = shift || confess "need file to package map";
+    
+    my $changedFiles = {
+        'changed' => [],
+        'missing' => []
     };
-    execute( $command, $config );
 
-    sub handleOutput {
-        my $file         = shift || confess "missing \$file";
+    my %packages = map { $$_ => 1 } ( values %{$file_to_package_map} );
+    my @packages = @{ $packageSystem->filterOutNotInstalledPackages( \%packages ) };
+
+    my $max  = scalar(@packages);
+    my $step = 40;
+    while ( $max > 0 ) {
+        $step = $max if ( $max < $step );
+        my @temporaryList = splice @packages, 0, $step;
+        $changedFiles = &detectChangedFileFromInstalledPackagesSplitted( $listOfDirs, $excludes, $changedFiles, join( ' ', @temporaryList ) );
+
+        $max -= $step;
+    }
+    return $changedFiles;
+
+    sub detectChangedFileFromInstalledPackagesSplitted{
         my $listOfDirs   = shift || confess "need list of dirs";
         my $excludes     = shift || confess "need list of excludes";
-        my $changedFiles = shift || confess "need changed files";
+        my $changedFiles = shift || confess "missing changed files";
+        my $packages     = shift || confess "need list of packages";
 
-        if ( $$file =~ /^\// ) {
-            chomp($$file);
+        my $command = "debsums -ac " . $packages;
+        my $config  = {
+            'outSub'  => \&handleOutput,
+            'outArgs' => [ $listOfDirs, $excludes, $changedFiles ]
+        };
+        execute( $command, $config );
 
-            if ( Main::isAcceptedPath( $listOfDirs, $excludes, $file ) ) {
-                push @{ $changedFiles->{'changed'} }, $$file;
+        sub handleOutput {
+            my $file         = shift || confess "missing \$file";
+            my $listOfDirs   = shift || confess "need list of dirs";
+            my $excludes     = shift || confess "need list of excludes";
+            my $changedFiles = shift || confess "need changed files";
+
+            if ( $$file =~ /^\// ) {
+                chomp($$file);
+
+                if ( Main::isAcceptedPath( $listOfDirs, $excludes, $file ) ) {
+                    push @{ $changedFiles->{'changed'} }, $$file;
+                }
             }
-        }
-        elsif ( $$file =~ /^debsums: missing file (\/[^ ]+)/o ) {
-            my $match = $1;
-            if ( Main::isAcceptedPath( $listOfDirs, $excludes, \$match ) ) {
-                push @{ $changedFiles->{'missing'} }, $match;
+            elsif ( $$file =~ /^debsums: missing file (\/[^ ]+)/o ) {
+                my $match = $1;
+                if ( Main::isAcceptedPath( $listOfDirs, $excludes, \$match ) ) {
+                    push @{ $changedFiles->{'missing'} }, $match;
+                }
             }
-        }
 
+            return $changedFiles;
+        }
         return $changedFiles;
     }
-
-    return $changedFiles;
 }
 
 sub filterOutNotInstalledPackages {

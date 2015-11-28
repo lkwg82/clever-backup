@@ -813,7 +813,7 @@ use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Spec::Functions qw/catfile/;
-use File::Temp qw/tempdir/;
+use File::Temp qw/tempfile/;
 
 sub debug   { Util::debug(@_); }
 sub verbose { Util::verbose(@_); }
@@ -887,7 +887,21 @@ sub filterOutNotInstalledPackages {
 sub savePackages {
     confess "need 2 params " if ( scalar(@_) != 2 );
     my ( $self, $tarStreamRef ) = @_;
-    # not implemented yet
+    
+    my $execution = &execute("yum list installed");
+    
+    if ($execution->{'exit-code'} > 0){
+        confess "failed to list installed packages";
+    }
+    
+    my ($fht,$filename) = tempfile();
+    print $fht $execution->{'output'};
+    close $fht;
+    
+    open my $fh, "<$filename" || confess "could not read $filename: $^E";
+    $$tarStreamRef->AddFile( "yum-installed-packages.list", -s $fh, $fh );
+    unlink $filename || confess "could not unlink apt-clone file : $filename";
+    close($fh);
 }
 
 # ----------------------------------------------------------------------------------

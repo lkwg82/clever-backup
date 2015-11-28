@@ -300,19 +300,11 @@ sub createDiffOfFiles {
                 ( my $original = $_ ) =~ s/^\///o;
 
                 if (-T) {    # if text-file
-                    my $diff;
-                    # some packages create files, so there is no original one inside the package
-                    if (-e "$tempdir/$original"){
-                        my $return = &execute("diff -u $tempdir/$original $changed");
-                        $diff   = $return->{'output'};
-                    }
-                    else{
-                        $diff = read_file($changed);
-                    }
+                    my $return = &execute("diff -u $tempdir/$original $changed");
                         
                     $diff{$changed} = { 
                         'type' => 'text', 
-                        'data' => $diff, 
+                        'data' => $return->{'output'}, 
                         'comment' => 'unified diff' 
                     };
                 }
@@ -936,7 +928,11 @@ sub downloadPackageAndExtract {
 
     my $file = &downloadPackage( \$package, \$tempdir );
 
-    my $return = execute("rpm2cpio $tempdir/$file | cpio --extract --preserve-modification-time --make-directories --quiet --unconditional");
+    my $cwd = cwd;
+    chdir $tempdir;
+    my $return = execute("rpm2cpio $file | cpio --extract --preserve-modification-time --make-directories --quiet --unconditional");
+    chdir $cwd;
+    
     if ( $return->{'exit-code'} > 0 ){
         confess "error while extracting $file";
     }        
@@ -960,8 +956,7 @@ sub downloadPackageAndExtract {
             confess "error while downloading $$package";
         }        
 
-        my @rpms = glob("*rpm");
-
+        my @rpms = glob("$$tempdir/*rpm");
         return $rpms[0];
     }
 }

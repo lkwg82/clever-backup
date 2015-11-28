@@ -595,7 +595,7 @@ EOT
             my %extension2Compression = reverse %extensions;
 
             $params->{'outputfile'} =~ /(\.\w{2,3})$/;
-            my $extension = $1;
+            my $extension = $1 || '';
 
             if ( length($extension) > 0 && exists( $extension2Compression{$extension} ) ) {
                 $params->{'compression'} = $extension2Compression{$extension};

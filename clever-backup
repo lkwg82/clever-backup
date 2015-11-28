@@ -547,7 +547,7 @@ EOT
 
     bye "umask is invalid " . $params->{'umask'} . "\n\n$help" if ( $params->{'umask'} !~ /^[0-7]{1,4}$/ );
 
-    grep { bye "missing source $_\n\n$help" unless (-e) } @{ $params->{'sourceDirectories'} };
+    grep { bye "missing source $_ (path is invalid)\n\n$help" unless (-e) } @{ $params->{'sourceDirectories'} };
 
     bye "quiet and verbose/debug (are mutually exclusive) \n\n$help" if ( $params->{'quiet'} && ( $params->{'debug'} || $params->{'verbose'} ) );
 

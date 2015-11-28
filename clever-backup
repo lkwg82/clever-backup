@@ -85,7 +85,7 @@ my $diffs = &createDiffOfFiles( $changed_files_map->{'changed'}, $file_to_packag
 
 &createBackupFile( $filesInNoPackageList, $diffs, $changed_files_map->{'missing'}, $packageSystem );
 
-&verbose( 'duration ' . ( time - $start ) . "ms\n" );
+&verbose( 'duration ' . sprintf("%.3fs",time - $start ) . "\n" );
 
 # ---- subs -----
 

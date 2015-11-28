@@ -268,7 +268,7 @@ sub createDiffOfFiles {
 
     my $changed_files       = shift || confess "need changed files";
     my $file_to_package_map = shift || confess "need file to package map";
-    my $packageSystem       = shift || confess "need missing packageSystem";
+    my $packageSystem       = shift || confess "need packageSystem";
 
     &verbose("create diff for changed files");
 
@@ -376,7 +376,7 @@ sub findChangedFiles {
     while ( $max > 0 ) {
         $step = $max if ( $max < $step );
         my @temporaryList = splice @packages, 0, $step;
-        $changedFiles = $packageSystem->checkPackageHashSums( $listOfDirs, $excludes, $changedFiles, join( ' ', @temporaryList ) );
+        $changedFiles = $packageSystem->detectChangedFileFromInstalledPackages( $listOfDirs, $excludes, $changedFiles, join( ' ', @temporaryList ) );
 
         $max -= $step;
     }
@@ -968,7 +968,7 @@ sub addFileAptClone {
     &debug("Done");
 };
 
-sub checkPackageHashSums {
+sub detectChangedFileFromInstalledPackages {
     confess "need 5 params " if ( scalar(@_) != 5 );
 
     my $self         = shift || confess "need myself";

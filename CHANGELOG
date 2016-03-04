@@ -14,3 +14,6 @@
 * Update README.md, @Lars K.W. Gohlke)
 * fixed to many symbolic links, @Lars K.W. Gohlke)
 * Update changelog for 0.1-2ubuntu27 release, @Lars K.W. Gohlke)
+
+# debian/0.1-2ubuntu28
+* fixed script error, @Lars K.W. Gohlke)

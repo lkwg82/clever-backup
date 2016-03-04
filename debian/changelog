@@ -1,3 +1,22 @@
+clever-backup (0.1-2ubuntu28) wily; urgency=medium
+
+  * [e5589fa275] updated changelog
+  * [411870dab9] fixed: error when backing up to a file without an extension e.g. /dev/null
+  * [8c5531498e] added information on error message
+  * [24380b6038] added centos support for non-packaged related files
+  * [a6f376d41b] cleanup
+  * [4d3cdf7bf8] fixed format of duration
+  * [856f319a43] cleanup
+  * [d4c4930286] added list of installed packages on centos
+  * [55a4ed53a8] cleanup
+  * [c723c4e0e3] seem to finish centos implementation (beta)
+  * [1578813d43] fixed: printing to STDERR when configured to be quiet
+  * [1935039403] fixed. path handling and diffing
+  * [a5d6a0334e] fixed: checking excluded paths
+  * [8d78be044a] updated to new commands
+
+ -- Lars K.W. Gohlke <lkwg82@gmx.de>  Sat, 05 Mar 2016 00:08:33 +0100
+
 clever-backup (0.1-2ubuntu27) vivid; urgency=medium
 
   * [0bd48afaba] added pushing git tags
